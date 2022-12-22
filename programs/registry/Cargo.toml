@@ -1,12 +1,12 @@
 [package]
-name = "arc"
+name = "registry"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "arc"
+name = "registry"
 
 [features]
 no-entrypoint = []
@@ -17,3 +17,5 @@ default = []
 
 [dependencies]
 anchor-lang = "0.26.0"
+anchor-spl = "0.26.0"
+core_ds = { path="../../../../sol-arc/programs/core-ds", features=["cpi"] }

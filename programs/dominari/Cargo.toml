@@ -1,0 +1,22 @@
+[package]
+name = "dominari"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "dominari"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.26.0"
+core_ds = { path="../../../../sol-arc/programs/core-ds", features=["cpi"] }
+registry = { path = "../registry", features = ["cpi"]}
+serde = { version = "1.0.147", optional=true }
