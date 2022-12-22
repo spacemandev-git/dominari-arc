@@ -1,0 +1,10 @@
+[healing_power]
+heals = 10
+
+[rank]
+rank = 0
+max_rank = 3
+cost_for_use_ladder = [1,5,10,15]
+link_rank_ladder = ["healer_0.png", "healer_1.png", "healer_2.png", "healer_3.png"]
+name_rank_ladder = ["Medic", "Nurse", "Doctor", "Surgeon"]
+per_rank_stat_increase = 10

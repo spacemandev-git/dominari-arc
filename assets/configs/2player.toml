@@ -1,0 +1,37 @@
+[transformation]
+starting_cards = ["Scout", "Scout", "Scout"]
+
+[config]
+max_players = 2
+starting_cards = []
+
+[map]
+cost_per_tile = 1000
+
+[map.mapmeta]
+max_x = 8
+max_y = 8
+
+# Not every tile is defined. 
+# If a tile is *not* defined, it's left as a blank tile
+# If a tile *is* defined, the blank tile is overwritten
+
+[[map.features]]
+x=0
+y=0
+feature="Healer"
+
+[[map.features]]
+x=0
+y=7
+feature="Healer"
+
+[[map.features]]
+x=7
+y=7
+feature="Healer"
+
+[[map.features]]
+x=7
+y=0
+feature="Healer"
