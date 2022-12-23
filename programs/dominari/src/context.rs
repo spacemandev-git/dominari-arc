@@ -11,7 +11,9 @@ use core_ds::{
     program::CoreDs
 };
 use registry::{
-    program::Registry, account::{RegistryConfig, ActionBundleRegistration}
+    program::Registry, 
+    account::{RegistryConfig, ActionBundleRegistration},
+    constant::SEEDS_REGISTRYSIGNER
 };
 
 #[derive(Accounts)]

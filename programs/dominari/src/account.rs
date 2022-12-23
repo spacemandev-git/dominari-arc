@@ -4,7 +4,6 @@ use std::collections::BTreeMap;
 use core_ds::account::MaxSize;
 use crate::{state::*, constant::STRING_MAX_SIZE};
 
-
 #[account]
 pub struct Config {
     pub authority: Pubkey,

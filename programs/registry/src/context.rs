@@ -22,7 +22,7 @@ pub struct Initialize<'info>{
     #[account(
         init,
         payer=payer,
-        seeds=[b"registry_signer"],
+        seeds=[SEEDS_REGISTRYSIGNER],
         bump,
         space=8+RegistryConfig::get_max_size() as usize
     )]
@@ -37,7 +37,7 @@ pub struct InstanceRegistry<'info>{
 
     #[account(
         mut,
-        seeds=[b"registry_signer"],
+        seeds=[SEEDS_REGISTRYSIGNER],
         bump,
     )]
     pub registry_config: Account<'info, RegistryConfig>,
@@ -52,7 +52,7 @@ pub struct InstanceRegistry<'info>{
         init,
         payer=payer,
         seeds=[
-            b"instance_authority",
+            SEEDS_INSTANCEAUTHORITY,
             registry_instance.key().as_ref()
         ],
         bump,
@@ -82,37 +82,23 @@ pub struct RegisterComponent<'info>{
 
     #[account(
         mut,
-        seeds=[b"registry_signer"],
+        seeds=[SEEDS_REGISTRYSIGNER],
         bump,
     )]
     pub registry_config: Account<'info, RegistryConfig>,
 }
 
 #[derive(Accounts)]
-pub struct RegisterSystem <'info> {
+pub struct RegisterAB <'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
-
-    /// CoreDS Registry Instance Account
-    /// Make sure that its a Registry instance that belongs to *this* Registry
-    #[account(
-        constraint = registry_instance.registry.key() == program_id.key()
-    )]
-    pub registry_instance: Account<'info, RegistryInstance>,
-
-    /// Make sure the instance authority is of the registry instance that's passed in
-    #[account(
-        constraint = instance_authority.instance == registry_instance.instance
-    )]
-    pub instance_authority: Account<'info, InstanceAuthority>,
     
     #[account(
         init,
         payer=payer,
         seeds=[
-            b"action_bundle_registration",
-            registry_instance.key().as_ref(),
+            SEEDS_ACTIONBUNDLEREGISTRATION,
             action_bundle.key().as_ref()
         ],
         bump,
@@ -120,8 +106,7 @@ pub struct RegisterSystem <'info> {
     )]
     pub action_bundle_registration: Account<'info, ActionBundleRegistration>,
 
-    /// CHECK: This can be any pubkey, but likely will be pubkey of 
-    /// PDA Signer from System
+    /// CHECK: PDA Signer from Action Bundle
     pub action_bundle: AccountInfo<'info>,
 }
 
@@ -132,18 +117,10 @@ pub struct AddComponentsToActionBundleRegistration <'info> {
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
 
-    /// CoreDS Registry Instance Account
-    /// Make sure that its a Registry instance that belongs to *this* Registry
     #[account(
-        constraint = registry_instance.registry.key() == program_id.key()
+        constraint = ab_signer.key() == action_bundle_registration.action_bundle.key()
     )]
-    pub registry_instance: Account<'info, RegistryInstance>,
-
-    /// Make sure the instance authority is of the Registry instance that's passed in
-    #[account(
-        constraint = instance_authority.instance == registry_instance.instance
-    )]
-    pub instance_authority: Account<'info, InstanceAuthority>,
+    pub ab_signer: Signer<'info>,
     
     #[account(
         mut,
@@ -151,17 +128,13 @@ pub struct AddComponentsToActionBundleRegistration <'info> {
         realloc::payer = payer,
         realloc::zero = false,
         seeds=[
-            b"action_bundle_registration",
-            registry_instance.key().as_ref(),
-            action_bundle.key().as_ref()
+            SEEDS_ACTIONBUNDLEREGISTRATION,
+            ab_signer.key().as_ref()
         ],
         bump,
     )]
     pub action_bundle_registration: Account<'info, ActionBundleRegistration>,
 
-    /// CHECK: This can be any pubkey, but likely will be pubkey of 
-    /// PDA Signer from System
-    pub action_bundle: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -171,18 +144,10 @@ pub struct AddInstancesToActionBundleRegistration <'info> {
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
 
-    /// CoreDS Registry Instance Account
-    /// Make sure that its a Registry instance that belongs to *this* Registry
     #[account(
-        constraint = registry_instance.registry.key() == program_id.key()
+        constraint = ab_signer.key() == action_bundle_registration.action_bundle.key()
     )]
-    pub registry_instance: Account<'info, RegistryInstance>,
-
-    /// Make sure the instance authority is of the Registry instance that's passed in
-    #[account(
-        constraint = instance_authority.instance == registry_instance.instance
-    )]
-    pub instance_authority: Account<'info, InstanceAuthority>,
+    pub ab_signer: Signer<'info>,
     
     #[account(
         mut,
@@ -190,17 +155,12 @@ pub struct AddInstancesToActionBundleRegistration <'info> {
         realloc::payer = payer,
         realloc::zero = false,
         seeds=[
-            b"action_bundle_registration",
-            registry_instance.key().as_ref(),
-            action_bundle.key().as_ref()
+            SEEDS_ACTIONBUNDLEREGISTRATION,
+            ab_signer.key().as_ref()
         ],
         bump,
     )]
     pub action_bundle_registration: Account<'info, ActionBundleRegistration>,
-
-    /// CHECK: This can be any pubkey, but likely will be pubkey of 
-    /// PDA Signer from System
-    pub action_bundle: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -212,7 +172,7 @@ pub struct InitEntity<'info> {
 
     /// CHECK: Used to Sign Tx for the CPI
     #[account(
-        seeds=[b"registry_signer"],
+        seeds=[SEEDS_REGISTRYSIGNER],
         bump,
     )]
     pub registry_config: Account<'info, RegistryConfig>,
@@ -242,7 +202,7 @@ pub struct MintARCNFT<'info> {
 
     /// CHECK: Used to Sign Tx for the CPI
     #[account(
-        seeds=[b"registry_signer"],
+        seeds=[SEEDS_REGISTRYSIGNER],
         bump,
     )]
     pub registry_config: Account<'info, RegistryConfig>,
@@ -279,7 +239,7 @@ pub struct AddComponents<'info>{
 
     //Used to Sign Tx for the CPI
     #[account(
-        seeds=[b"registry_signer"],
+        seeds=[SEEDS_REGISTRYSIGNER],
         bump,
     )]
     pub registry_config: Account<'info, RegistryConfig>,
@@ -311,7 +271,7 @@ pub struct RemoveComponent<'info>{
 
     //Used to Sign Tx for the CPI
     #[account(
-        seeds=[b"registry_signer"],
+        seeds=[SEEDS_REGISTRYSIGNER],
         bump,
     )]
     pub registry_config: Account<'info, RegistryConfig>,
@@ -339,7 +299,7 @@ pub struct RemoveComponent<'info>{
 pub struct ModifyComponent<'info>{
     //Used to Sign Tx for the CPI
     #[account(
-        seeds=[b"registry_signer"],
+        seeds=[SEEDS_REGISTRYSIGNER],
         bump,
     )]
     pub registry_config: Account<'info, RegistryConfig>,
@@ -370,7 +330,7 @@ pub struct RemoveEntity<'info>{
 
     //Used to Sign Tx for the CPI
     #[account(
-        seeds=[b"registry_signer"],
+        seeds=[SEEDS_REGISTRYSIGNER],
         bump,
     )]
     pub registry_config: Account<'info, RegistryConfig>,

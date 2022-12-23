@@ -73,10 +73,9 @@ pub mod registry {
         Ok(())
     }
 
-    pub fn register_action_bundle(ctx: Context<RegisterSystem>) -> Result<()> {
+    pub fn register_action_bundle(ctx: Context<RegisterAB>) -> Result<()> {
         ctx.accounts.action_bundle_registration.action_bundle = ctx.accounts.action_bundle.key();
         ctx.accounts.action_bundle_registration.instances = BTreeSet::new();
-        ctx.accounts.action_bundle_registration.instances.insert(ctx.accounts.registry_instance.instance);
         ctx.accounts.action_bundle_registration.can_mint = true;
         Ok(())
     }

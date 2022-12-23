@@ -15,6 +15,18 @@ const AdminPage: NextPage = (props) => {
     return (
         <div>
             <Header {...props}></Header>
+            <div>
+                <label>Registry Contract</label>
+                <input type="text"></input>
+                <button>Initalize Contract</button>
+                <button>Register Components</button>
+            </div>
+            <div>
+                <label>Action Bundle Contract</label>
+                <input type="text"></input>
+                <button>Initalize</button>
+                <button>Register Blueprints</button>
+            </div>
         </div>
     );
 }
