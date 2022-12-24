@@ -6,6 +6,7 @@ glob("../assets/blueprints/**/*.toml", (err, files) => {
     for(let file of files) {
         let name = file.split('/').pop().split('.toml')[0]
         names.push(name);
+        fs.writeFileSync(`public/blueprints/${name}.toml`, (fs.readFileSync(file).toString()));
     }
-    fs.writeFileSync('public/blueprints.json', JSON.stringify(names));
+    //fs.writeFileSync('public/blueprints/blueprints.json', JSON.stringify(names));
 })

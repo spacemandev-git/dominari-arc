@@ -24,13 +24,13 @@ impl Dominari {
         }
     }
 
-    pub fn initalize(&self, payer: &str, component_index:&ComponentIndex) -> Instruction {
+    pub fn initalize(&self, payer: &str, component_index:&ComponentIndex) -> JsValue {
         let payer = Pubkey::from_str(payer).unwrap();
         let config = Pubkey::find_program_address(&[
             dominari::constant::SEEDS_ABSIGNER
         ], &self.program_id).0;
 
-        Instruction {
+        let ix = Instruction {
             program_id: self.program_id,
             accounts: dominari::accounts::Initialize {
                 payer,
@@ -40,10 +40,11 @@ impl Dominari {
             data: dominari::instruction::Initialize {
                 component_keys: component_index.get_relevant_component_keys()
             }.data()
-        }
+        };
+        serde_wasm_bindgen::to_value(&ix).unwrap()
     }
 
-    pub fn register_blueprint(&self, payer:&str, name:&str, component_index:&ComponentIndex, blueprint_json: JsValue) -> Instruction {
+    pub fn register_blueprint(&self, payer:&str, name:&str, component_index:&ComponentIndex, blueprint_json: JsValue) -> JsValue {
         let blueprint: BlueprintConfig = serde_wasm_bindgen::from_value(blueprint_json).unwrap();
         let mut components: BTreeMap<Pubkey, SerializedComponent> = BTreeMap::new();
         let reference = component_index.get_relevant_component_keys();
@@ -191,7 +192,7 @@ impl Dominari {
             name.as_bytes(),
         ], &self.program_id).0;
 
-        Instruction {
+        let ix = Instruction {
             program_id: self.program_id,
             accounts: dominari::accounts::RegisterBlueprint {
                 payer,
@@ -203,7 +204,8 @@ impl Dominari {
                 name: String::from(name),
                 components,
             }.data()
-        }
+        };
+        serde_wasm_bindgen::to_value(&ix).unwrap()
     }
 }   
 

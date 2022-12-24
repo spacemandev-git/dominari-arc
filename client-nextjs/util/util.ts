@@ -1,5 +1,4 @@
 import * as anchor from '@project-serum/anchor';
-import { useConnection } from '@solana/wallet-adapter-react';
 
 export const ixWasmToJs = (ix: any):anchor.web3.TransactionInstruction => {
     return new anchor.web3.TransactionInstruction({

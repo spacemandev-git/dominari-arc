@@ -13,10 +13,10 @@ pub struct ComponentIndex {
 #[wasm_bindgen]
 impl ComponentIndex {
     #[wasm_bindgen(constructor)]
-    pub fn new(id: &str) -> Self {
+    pub fn new(dominari_id: &str) -> Self {
         console_error_panic_hook::set_once();
         ComponentIndex { 
-            registry: Pubkey::from_str(id).unwrap(),
+            registry: Pubkey::from_str(dominari_id).unwrap(),
             index: bimap::BiHashMap::<String, Pubkey>::new() 
         }
     }

@@ -7,6 +7,8 @@ import { Dominari, ComponentIndex, Registry } from 'dominari-sdk';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { ixWasmToJs, ixPack } from '../util/util';
 import { Transaction } from '@solana/web3.js';
+import toml from 'toml';
+
 /**
  * Connect Wallet
  * Initialize Registry & AB
@@ -22,9 +24,11 @@ const AdminPage: NextPage = (props) => {
     const registryIDref = useRef<HTMLInputElement>(null);
     const dominariIDref = useRef<HTMLInputElement>(null);
     const schemaFileRef = useRef<HTMLInputElement>(null);
+    const blueprintFilesRef = useRef<HTMLInputElement>(null);
+
     const { publicKey, sendTransaction, signAllTransactions, signTransaction } = useWallet();
 
-    const initalizeRegistry = async () => {
+    const initRegistry = async () => {
         if(!publicKey){
             alert("Please sign in first!");
             return;
@@ -85,6 +89,63 @@ const AdminPage: NextPage = (props) => {
         }
     }
 
+    const initDominari = async () => {
+        const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+        // Create Component Index (Relevant Keys)
+        const schemaFiles = schemaFileRef.current?.files;
+        if(schemaFiles?.length != 1){
+            alert("Please select a component schema list file!");
+            return;
+        }
+        const componentSchemas = await schemaFiles[0].text();
+        let componentIndex = new ComponentIndex(dominariIDref.current?.value as string);
+        for(let comp of componentSchemas.split("\n")){
+            componentIndex.insert_component_url(comp);
+        }
+
+        // Initialize
+        dominari = new Dominari(dominariIDref.current?.value as string);
+        const initDomIx = ixWasmToJs(dominari.initalize(publicKey?.toBase58() as string, componentIndex));
+        console.log("Init Dom Ix: ", initDomIx);
+        const initDomTx = new Transaction();
+        initDomTx.add(initDomIx);
+        initDomTx.recentBlockhash = recentBlockhash;
+        initDomTx.feePayer = publicKey!;
+        
+        // Register Blueprints
+        const blueprintFiles = blueprintFilesRef.current?.files;
+        console.log(blueprintFiles);
+        let blueprintIxs = []
+        for(let i=0; i<blueprintFiles?.length!; i++){
+            let blueprintFile = blueprintFiles?.item(i);
+            let ix = ixWasmToJs(dominari.register_blueprint(
+                publicKey?.toBase58() as string, 
+                blueprintFile?.name as string, 
+                componentIndex,
+                toml.parse(await blueprintFile?.text() as string)) 
+            );
+            blueprintIxs.push(ix);
+        }
+        console.log("Blueprint Ixs: ", blueprintIxs);
+        
+        const ixG = await ixPack(blueprintIxs);
+        let blueprintTxs = [initDomTx];
+        for (let g of ixG){
+            const tx = new Transaction();
+            tx.add(...g);
+            tx.recentBlockhash = recentBlockhash;
+            tx.feePayer = publicKey!;
+            blueprintTxs.push(tx);
+        }
+
+        signAllTransactions ? await signAllTransactions(blueprintTxs) : alert("sign in");
+        for(let tx of blueprintTxs) {
+            const sig = await connection.sendRawTransaction(tx.serialize(), {skipPreflight: true});
+            console.log("Sent TX: ", sig);
+            await connection.confirmTransaction(sig);
+        }
+    }
 
     return (
         <div className="grid grid-rows-3">
@@ -103,7 +164,15 @@ const AdminPage: NextPage = (props) => {
                     <label>Schema URL Text File</label>
                     <input type="file" ref={schemaFileRef}></input> 
                 </div>
-                <button className="bg-teal-700 mr-72" onClick={initalizeRegistry}>Init Registry</button>
+                <button className="bg-teal-700 mr-72" onClick={initRegistry}>Init Registry</button>
+            </div>
+            <div className='relative flex flex-col gap-2 mx-36'>
+                <label className="text-2xl">Dominari Initalization</label>
+                <div className="flex flex-row gap-4">
+                    <label>Blueprint Files</label>
+                    <input type="file" ref={blueprintFilesRef} multiple></input> 
+                </div>
+                <button className="bg-teal-700 mr-72" onClick={initDominari}>Init Dominari</button>
             </div>
         </div>
     );

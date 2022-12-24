@@ -1,0 +1,27 @@
+[offchain_metadata]
+link = "scout.png"
+
+[damage]
+min_damage = 1
+max_damage = 10
+bonus_infantry = 0 
+bonus_armor = 0 
+bonus_aircraft = 0
+bonus_feature = 0
+
+[health]
+health = 10
+
+[troop_class]
+class = "Infantry"
+
+[range]
+movement = 1
+attack_range = 1
+
+[last_used]
+last_used = 0
+recovery = 4
+
+[value]
+value = 1
