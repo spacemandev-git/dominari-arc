@@ -22,7 +22,7 @@ const Header: FC = (props:any) => {
     return(
         <div>
             <div className="fixed left-0 self-center text-xl ml-4 mt-4">
-                <label>Dominari</label>
+                <label className="text-2xl align-center">Dominari</label>
             </div>
             <div className="fixed right-0 flex mt-4 mr-4">
                 <label

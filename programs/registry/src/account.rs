@@ -8,20 +8,21 @@ use crate::constant::STRING_MAX_SIZE;
 
 #[account]
 pub struct RegistryConfig{
+    pub authority: Pubkey,
     pub core_ds: Pubkey,
     pub components: u64,
 }
 
 impl MaxSize for RegistryConfig {
     fn get_max_size() -> u64 {
-        return 32+8;
+        return 32+32+8;
     }
 }
 
 #[account]
 pub struct InstanceAuthority{
     pub instance: u64,
-    pub authority: Pubkey
+    pub authority: Pubkey // Action Bundle Pubkey
 }
 
 impl MaxSize for InstanceAuthority {

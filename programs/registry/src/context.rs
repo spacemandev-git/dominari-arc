@@ -36,30 +36,23 @@ pub struct InstanceRegistry<'info>{
     pub system_program: Program<'info, System>,
 
     #[account(
-        mut,
         seeds=[SEEDS_REGISTRYSIGNER],
         bump,
     )]
     pub registry_config: Account<'info, RegistryConfig>,
 
+    pub ab_signer: Signer<'info>,
+
+    #[account(
+        mut,
+        constraint = action_bundle_registration.action_bundle.key() == ab_signer.key()
+    )]
+    pub action_bundle_registration: Account<'info, ActionBundleRegistration>,
+
     /// CHECK: Initialized via CPI
     #[account(mut)]
     pub registry_instance: AccountInfo<'info>,
     pub core_ds: Program<'info, CoreDs>,
-
-    // Instance Authority is in charge of allowing new action_bundles onto this instance
-    #[account(
-        init,
-        payer=payer,
-        seeds=[
-            SEEDS_INSTANCEAUTHORITY,
-            registry_instance.key().as_ref()
-        ],
-        bump,
-        space=8+InstanceAuthority::get_max_size() as usize,
-    )]
-    pub instance_authority: Account<'info, InstanceAuthority>
-
 }
 
 #[derive(Accounts)]
@@ -119,49 +112,18 @@ pub struct AddComponentsToActionBundleRegistration <'info> {
     pub system_program: Program<'info, System>,
 
     #[account(
-        constraint = ab_signer.key() == action_bundle_registration.action_bundle.key()
+        constraint = config.authority.key() == payer.key()
     )]
-    pub ab_signer: Signer<'info>,
+    pub config: Account<'info, RegistryConfig>,
     
     #[account(
         mut,
         realloc = action_bundle_registration.to_account_info().data_len() + (components.len()*32),
         realloc::payer = payer,
         realloc::zero = false,
-        seeds=[
-            SEEDS_ACTIONBUNDLEREGISTRATION,
-            ab_signer.key().as_ref()
-        ],
-        bump,
     )]
     pub action_bundle_registration: Account<'info, ActionBundleRegistration>,
 
-}
-
-#[derive(Accounts)]
-#[instruction(instances: Vec<u64>)]
-pub struct AddInstancesToActionBundleRegistration <'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    pub system_program: Program<'info, System>,
-
-    #[account(
-        constraint = ab_signer.key() == action_bundle_registration.action_bundle.key()
-    )]
-    pub ab_signer: Signer<'info>,
-    
-    #[account(
-        mut,
-        realloc = action_bundle_registration.to_account_info().data_len() + (instances.len()*8),
-        realloc::payer = payer,
-        realloc::zero = false,
-        seeds=[
-            SEEDS_ACTIONBUNDLEREGISTRATION,
-            ab_signer.key().as_ref()
-        ],
-        bump,
-    )]
-    pub action_bundle_registration: Account<'info, ActionBundleRegistration>,
 }
 
 #[derive(Accounts)]

@@ -14,11 +14,11 @@ pub struct Dominari {
     pub program_id: Pubkey
 }
 
-
 #[wasm_bindgen]
 impl Dominari {
     #[wasm_bindgen(constructor)]
     pub fn new(id:&str) -> Self {
+        console_error_panic_hook::set_once();
         Dominari {
             program_id: Pubkey::from_str(id).unwrap()
         }

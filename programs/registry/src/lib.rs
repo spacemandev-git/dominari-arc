@@ -13,29 +13,27 @@ pub mod state;
 
 //use account::*;
 use context::*;
-//use constant::*;
+use constant::*;
 //use error::*;
 //use event::*;
 //use state::*;
 
 #[program]
 pub mod registry {
-
-    use std::collections::BTreeMap;
-
     use super::*;
 
-    pub fn initalize(ctx:Context<Initialize>, core_ds: Pubkey) -> Result<()> {
+    /**
+     * Sets the Registry Config account with Payer as Registry Admin
+    */
+    pub fn initialize(ctx:Context<Initialize>, core_ds: Pubkey) -> Result<()> {
         ctx.accounts.registry_config.core_ds = core_ds;
         ctx.accounts.registry_config.components = 0;
+        ctx.accounts.registry_config.authority = ctx.accounts.payer.key();
         Ok(())
     }
 
     /**
-     * Instance World should normally be regulated by governance; 
-     * In this case, we allow anyone to instance a new dominari registry.
-     * We also set the Instance Authority for the World to the Payer
-     * This authority is the only one that can add action_bundles to a given instance
+     * Registered Action Bundles can instance this registry and are given control over the instance 
      */
     pub fn instance_registry(ctx:Context<InstanceRegistry>, instance:u64) -> Result<()> {
         let core_ds = ctx.accounts.core_ds.to_account_info();
@@ -46,7 +44,7 @@ pub mod registry {
             registry_signer: ctx.accounts.registry_config.to_account_info()
         };
         let registry_signer_seeds:&[&[u8]] = &[
-            b"registry_signer",
+            SEEDS_REGISTRYSIGNER,
             &[*ctx.bumps.get("registry_config").unwrap()]
         ];
         let signer_seeds = &[registry_signer_seeds];
@@ -57,15 +55,14 @@ pub mod registry {
             signer_seeds
         );
 
-        core_ds::cpi::init_registry(register_registry_ctx, ctx.program_id.key(), instance)?;
-        ctx.accounts.instance_authority.instance = instance;
-        ctx.accounts.instance_authority.authority = ctx.accounts.payer.key(); // fancier Worlds might have different governance setup for this
-        
+        core_ds::cpi::init_registry(register_registry_ctx, ctx.program_id.key(), instance)?;        
+        // Allow this Action Bundle authority over it's own Instance
+        ctx.accounts.action_bundle_registration.instances.insert(instance);
         Ok(())
     }
-
+    
     /**
-     * Anyone can register new components as long as they use unique URIs
+     * Anyone can register a component with the registry as long as it's a unique URI
      */
     pub fn register_component(ctx:Context<RegisterComponent>, schema:String) -> Result<()> {
         ctx.accounts.component.url = schema.clone();
@@ -73,6 +70,10 @@ pub mod registry {
         Ok(())
     }
 
+    /**
+     * Only the ACTION BUNDLE can register itself, as one of the requirements is it's Signer PDA
+     * which is set as it's authority
+     */
     pub fn register_action_bundle(ctx: Context<RegisterAB>) -> Result<()> {
         ctx.accounts.action_bundle_registration.action_bundle = ctx.accounts.action_bundle.key();
         ctx.accounts.action_bundle_registration.instances = BTreeSet::new();
@@ -80,16 +81,13 @@ pub mod registry {
         Ok(())
     }
 
+    /**
+     * Only the Registry Admin can add components to the Action Bundle
+     * Prevents AB from adding components they shouldn't have access to.
+     */
     pub fn add_components_to_action_bundle_registration(ctx:Context<AddComponentsToActionBundleRegistration>, components:Vec<Pubkey>) -> Result<()> {
         for comp in components {
             ctx.accounts.action_bundle_registration.components.insert(comp);
-        }
-        Ok(())
-    }
-
-    pub fn add_instances_to_action_bundle_registration(ctx:Context<AddInstancesToActionBundleRegistration>, instances: Vec<u64>) -> Result<()> {
-        for instance in instances{
-            ctx.accounts.action_bundle_registration.instances.insert(instance);
         }
         Ok(())
     }
@@ -103,7 +101,7 @@ pub mod registry {
             registry_signer: ctx.accounts.registry_config.to_account_info(),
         };  
         let registry_signer_seeds:&[&[u8]] = &[
-            b"registry_signer",
+            SEEDS_REGISTRYSIGNER,
             &[*ctx.bumps.get("registry_config").unwrap()]
         ];
         let signer_seeds = &[registry_signer_seeds];
@@ -128,7 +126,7 @@ pub mod registry {
             arcnft: ctx.accounts.arcnft.to_account_info(),
         };  
         let registry_signer_seeds:&[&[u8]] = &[
-            b"registry_signer",
+            SEEDS_REGISTRYSIGNER,
             &[*ctx.bumps.get("registry_config").unwrap()]
         ];
         let signer_seeds = &[registry_signer_seeds];
@@ -150,7 +148,7 @@ pub mod registry {
             registry_signer: ctx.accounts.registry_config.to_account_info()
         };
         let registry_signer_seeds:&[&[u8]] = &[
-            b"registry_signer",
+            SEEDS_REGISTRYSIGNER,
             &[*ctx.bumps.get("registry_config").unwrap()]
         ];
         let signer_seeds = &[registry_signer_seeds];
@@ -171,7 +169,7 @@ pub mod registry {
             registry_signer: ctx.accounts.registry_config.to_account_info()
         };
         let registry_signer_seeds:&[&[u8]] = &[
-            b"registry_signer",
+            SEEDS_REGISTRYSIGNER,
             &[*ctx.bumps.get("registry_config").unwrap()]
         ];
         let signer_seeds = &[registry_signer_seeds];
@@ -190,7 +188,7 @@ pub mod registry {
             registry_signer: ctx.accounts.registry_config.to_account_info()
         };
         let registry_signer_seeds:&[&[u8]] = &[
-            b"registry_signer",
+            SEEDS_REGISTRYSIGNER,
             &[*ctx.bumps.get("registry_config").unwrap()]
         ];
         let signer_seeds = &[registry_signer_seeds];
@@ -212,7 +210,7 @@ pub mod registry {
             registry_signer: ctx.accounts.registry_config.to_account_info()
         };
         let registry_signer_seeds:&[&[u8]] = &[
-            b"registry_signer",
+            SEEDS_REGISTRYSIGNER,
             &[*ctx.bumps.get("registry_config").unwrap()]
         ];
         let signer_seeds = &[registry_signer_seeds];

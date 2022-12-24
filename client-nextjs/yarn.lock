@@ -2519,6 +2519,9 @@ doctrine@^3.0.0:
   dependencies:
     esutils "^2.0.2"
 
+dominari-sdk@../dominari-sdk/pkg:
+  version "0.1.0"
+
 dot-case@^3.0.4:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/dot-case/-/dot-case-3.0.4.tgz#9b2b670d00a431667a8a75ba29cd1b98809ce751"

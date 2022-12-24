@@ -284,7 +284,8 @@ pub mod dominari {
                 registry_config: ctx.accounts.registry_config.to_account_info(),
                 registry_instance: ctx.accounts.registry_instance.to_account_info(),
                 core_ds: ctx.accounts.coreds.to_account_info(),
-                instance_authority: ctx.accounts.instance_authority.to_account_info()
+                action_bundle_registration: ctx.accounts.ab_registration.to_account_info(),
+                ab_signer: ctx.accounts.config.to_account_info(),
             }
         );
 

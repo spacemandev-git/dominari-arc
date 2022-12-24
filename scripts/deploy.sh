@@ -9,7 +9,7 @@ cd ../dominari/arc
 
 anchor build
 # Deploy Registry
-solana program deploy --program-id keypairs/registry-keypair.json target/deploy/registry.so
+solana program deploy --program-id localhost_keypairs/registry-keypair.json target/deploy/registry.so
 # Deploy Dominari Action Bundle
-solana program deploy --program-id keypairs/dominari-keypair.json target/deploy/dominari.so
+solana program deploy --program-id localhost_keypairs/dominari-keypair.json target/deploy/dominari.so
 

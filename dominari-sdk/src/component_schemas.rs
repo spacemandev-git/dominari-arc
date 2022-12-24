@@ -14,6 +14,7 @@ pub struct ComponentIndex {
 impl ComponentIndex {
     #[wasm_bindgen(constructor)]
     pub fn new(id: &str) -> Self {
+        console_error_panic_hook::set_once();
         ComponentIndex { 
             registry: Pubkey::from_str(id).unwrap(),
             index: bimap::BiHashMap::<String, Pubkey>::new() 

@@ -254,6 +254,7 @@ pub struct CreateGameInstance<'info>{
         bump,
     )]
     pub config: Box<Account<'info, Config>>,
+    
     #[account(
         init,
         payer=payer,
@@ -275,10 +276,6 @@ pub struct CreateGameInstance<'info>{
     pub registry_config: Account<'info, RegistryConfig>,
     pub registry_program: Program<'info, Registry>,
     pub ab_registration: Box<Account<'info, ActionBundleRegistration>>,
-
-    /// CHECK: Created via CPI in the Registry program
-    #[account(mut)]
-    pub instance_authority: AccountInfo<'info>,
 
 
     //CoreDs

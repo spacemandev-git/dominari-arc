@@ -14,7 +14,7 @@ require('../styles/globals.css');
 const App: FC<AppProps> = ({ Component, pageProps }) => {
     // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
     //const network = WalletAdapterNetwork.Devnet;
-    const [endpoint, setEndpoint] = useState(clusterApiUrl(WalletAdapterNetwork.Devnet));
+    const [endpoint, setEndpoint] = useState("http://localhost:8899");
 
     // You can also provide a custom RPC endpoint
     //const endpoint = useMemo(() => clusterApiUrl(network), [network]);
