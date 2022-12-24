@@ -73,6 +73,7 @@ pub struct RegisterComponent<'info>{
         init,
         payer=payer,
         seeds=[
+            SEEDS_COMPONENTREGISTRATION,
             schema.as_bytes(),
         ],
         bump,

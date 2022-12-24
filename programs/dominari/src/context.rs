@@ -50,7 +50,7 @@ pub struct RegisterBlueprint <'info> {
         init,
         payer=payer,
         seeds=[
-            b"blueprint",
+            SEEDS_BLUEPRINT,
             name.as_bytes().as_ref()
         ],
         bump,

@@ -7,21 +7,17 @@ use anchor_lang::system_program::ID as system_program;
 #[wasm_bindgen]
 #[derive(Default)]
 pub struct Registry {
-    pub program_id: Option<Pubkey>
+    pub program_id: Pubkey
 }
 
 #[wasm_bindgen]
 impl Registry {
     #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
+    pub fn new(id:&str) -> Self {
         console_error_panic_hook::set_once();
         Registry { 
-            ..Default::default()   
+            program_id: Pubkey::from_str(id).unwrap()
         }
-    }
-
-    pub fn set_program_id(&mut self, id:&str) {
-        self.program_id = Some(Pubkey::from_str(id).unwrap());
     }
     
     // Initialize Registry (Creates Registry Config)
@@ -29,7 +25,7 @@ impl Registry {
         let payer = Pubkey::from_str(payer_str).unwrap();
         let registry_config = Pubkey::find_program_address(&[
             registry::constant::SEEDS_REGISTRYSIGNER,
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         let accounts = registry::accounts::Initialize {
             payer,
@@ -38,7 +34,7 @@ impl Registry {
         };
 
         Instruction {
-            program_id: self.program_id.unwrap(),
+            program_id: self.program_id,
             accounts: accounts.to_account_metas(None),
             data: registry::instruction::Initalize {
                 core_ds: core_ds::id(),
@@ -51,14 +47,14 @@ impl Registry {
         let payer = Pubkey::from_str(payer_str).unwrap();
         let registry_config = Pubkey::find_program_address(&[
             registry::constant::SEEDS_REGISTRYSIGNER,
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         let component = Pubkey::find_program_address(&[
             schema.as_bytes().as_ref(),
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         Instruction {
-            program_id: self.program_id.unwrap(),
+            program_id: self.program_id,
             accounts: registry::accounts::RegisterComponent {
                 payer,
                 system_program,
@@ -78,15 +74,15 @@ impl Registry {
         let action_bundle_registration = Pubkey::find_program_address(&[
             registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
             ab.to_bytes().as_ref()
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         let action_bundle = Pubkey::find_program_address(&[
             dominari::constant::SEEDS_ABSIGNER,
             ab.to_bytes().as_ref()
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         Instruction {
-            program_id: self.program_id.unwrap(),
+            program_id: self.program_id,
             accounts: registry::accounts::RegisterAB {
                 payer,
                 system_program,
@@ -109,16 +105,16 @@ impl Registry {
         let action_bundle_registration = Pubkey::find_program_address(&[
             registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
             ab.to_bytes().as_ref()
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         let ab_signer = Pubkey::find_program_address(&[
             dominari::constant::SEEDS_ABSIGNER,
             ab.to_bytes().as_ref()
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         
         Instruction {
-            program_id: self.program_id.unwrap(),
+            program_id: self.program_id,
             accounts: registry::accounts::AddComponentsToActionBundleRegistration {
                 payer,
                 system_program,
@@ -138,16 +134,16 @@ impl Registry {
         let action_bundle_registration = Pubkey::find_program_address(&[
             registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
             ab.to_bytes().as_ref()
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         let ab_signer = Pubkey::find_program_address(&[
             dominari::constant::SEEDS_ABSIGNER,
             ab.to_bytes().as_ref()
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         
         Instruction {
-            program_id: self.program_id.unwrap(),
+            program_id: self.program_id,
             accounts: registry::accounts::AddInstancesToActionBundleRegistration {
                 payer,
                 system_program,
@@ -165,22 +161,22 @@ impl Registry {
         let payer = Pubkey::from_str(payer_str).unwrap();
         let registry_config = Pubkey::find_program_address(&[
             registry::constant::SEEDS_REGISTRYSIGNER,
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
 
         let registry_instance = Pubkey::find_program_address(&[
             core_ds::constant::SEEDS_REGISTRYINSTANCE_PREFIX,
-            &self.program_id.unwrap().as_ref(),
+            &self.program_id.as_ref(),
             instance.to_be_bytes().as_ref()
         ], &core_ds::id()).0;
 
         let instance_authority = Pubkey::find_program_address(&[
             registry::constant::SEEDS_INSTANCEAUTHORITY,
             registry_instance.to_bytes().as_ref()
-        ], &self.program_id.unwrap()).0;
+        ], &self.program_id).0;
 
         Instruction {
-            program_id: self.program_id.unwrap(),
+            program_id: self.program_id,
             accounts: registry::accounts::InstanceRegistry {
                 payer,
                 system_program,

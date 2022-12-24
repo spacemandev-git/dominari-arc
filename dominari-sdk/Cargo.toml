@@ -16,3 +16,4 @@ serde = { version="1.0.147", features=["derive"]}
 core_ds = { path="../../../sol-arc/programs/core-ds", features=["no-entrypoint"]}
 registry = { path="../programs/registry", features=["no-entrypoint"]}
 dominari = { path="../programs/dominari", features=["no-entrypoint", "sdk"]}
+bimap = "0.6.2"

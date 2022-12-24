@@ -43,7 +43,7 @@ pub mod dominari {
     pub fn system_initalize_map(ctx:Context<SystemInitMap>, entity_id:u64, max_x: u8, max_y: u8) -> Result<()> {
         let reference = &ctx.accounts.config.components;
         let config_seeds:&[&[u8]] = &[
-            b"config",
+            SEEDS_ABSIGNER,
             &[*ctx.bumps.get("config").unwrap()]
         ];
         let signer_seeds = &[config_seeds];
@@ -151,7 +151,7 @@ pub mod dominari {
         });
 
         let config_seeds:&[&[u8]] = &[
-            b"config",
+            SEEDS_ABSIGNER,
             &[*ctx.bumps.get("config").unwrap()]
         ];
         let signer_seeds = &[config_seeds];
@@ -228,7 +228,7 @@ pub mod dominari {
 
 
         let config_seeds:&[&[u8]] = &[
-            b"config",
+            SEEDS_ABSIGNER,
             &[*ctx.bumps.get("config").unwrap()]
         ];
         let signer_seeds = &[config_seeds];
@@ -334,7 +334,7 @@ pub mod dominari {
         });
 
         let config_seeds:&[&[u8]] = &[
-            b"config",
+            SEEDS_ABSIGNER,
             &[*ctx.bumps.get("config").unwrap()]
         ];
         let signer_seeds = &[config_seeds];
@@ -443,7 +443,7 @@ pub mod dominari {
         components.extend(ctx.accounts.unit_blueprint.components.clone());
         
         let config_seeds:&[&[u8]] = &[
-            b"config",
+            SEEDS_ABSIGNER,
             &[*ctx.bumps.get("config").unwrap()]
         ];
         let signer_seeds = &[config_seeds];
@@ -566,7 +566,7 @@ pub mod dominari {
         }
 
         let config_seeds:&[&[u8]] = &[
-            b"config",
+            SEEDS_ABSIGNER,
             &[*ctx.bumps.get("config").unwrap()]
         ];
         let signer_seeds = &[config_seeds];
@@ -701,7 +701,7 @@ pub mod dominari {
         attacker_last_used.last_used = clock.slot;        
         
         let config_seeds:&[&[u8]] = &[
-            b"config",
+            SEEDS_ABSIGNER,
             &[*ctx.bumps.get("config").unwrap()]
         ];
         let signer_seeds = &[config_seeds];
