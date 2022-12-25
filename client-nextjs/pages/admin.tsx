@@ -1,6 +1,4 @@
 import type { NextPage } from 'next';
-import dynamic from 'next/dynamic';
-import Head from 'next/head';
 import React, {useRef} from 'react';
 import Header from '../components/header';
 import { Dominari, ComponentIndex, Registry } from 'dominari-sdk';
@@ -8,6 +6,7 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { ixWasmToJs, ixPack } from '../util/util';
 import { Transaction } from '@solana/web3.js';
 import toml from 'toml';
+import { DOMINARI_PROGRAM_ID, REGISTRY_PROGRAM_ID } from '../util/constants';
 
 /**
  * Connect Wallet
@@ -154,11 +153,11 @@ const AdminPage: NextPage = (props) => {
                 <label className="text-2xl">Registry Initialization</label>
                 <div className="flex flex-row gap-4">
                     <label>Registry ID</label>
-                    <input type="text" className="w-[30rem]" defaultValue={"H5mieGWWK6qukHoNzbR6ysLxReeQC4JHZcNM6JkPQnm3"} ref={registryIDref}></input>
+                    <input type="text" className="w-[30rem]" defaultValue={REGISTRY_PROGRAM_ID.toBase58()} ref={registryIDref}></input>
                 </div>
                 <div className="flex flex-row gap-4">
                     <label>Dominari ID</label>
-                    <input type="text" className="w-[30rem]" defaultValue={"3YdayPtujByJ1g1DWEUh7vpg78gZL49FWyD5rDGyof9T"} ref={dominariIDref}></input>
+                    <input type="text" className="w-[30rem]" defaultValue={DOMINARI_PROGRAM_ID.toBase58()} ref={dominariIDref}></input>
                 </div>
                 <div className="flex flex-row gap-4">
                     <label>Schema URL Text File</label>
