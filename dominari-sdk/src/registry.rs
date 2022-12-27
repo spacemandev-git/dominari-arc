@@ -78,8 +78,7 @@ impl Registry {
 
         let ab_signer = Pubkey::find_program_address(&[
             dominari::constant::SEEDS_ABSIGNER,
-            ab.to_bytes().as_ref()
-        ], &self.program_id).0;
+        ], &ab).0;
 
         let action_bundle_registration = Pubkey::find_program_address(&[
             registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
@@ -113,8 +112,7 @@ impl Registry {
         let ab = Pubkey::from_str(ab).unwrap();
         let ab_signer = Pubkey::find_program_address(&[
             dominari::constant::SEEDS_ABSIGNER,
-            ab.to_bytes().as_ref()
-        ], &self.program_id).0;
+        ], &ab).0;
 
         let action_bundle_registration = Pubkey::find_program_address(&[
             registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,

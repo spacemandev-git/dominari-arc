@@ -1,4 +1,5 @@
 import * as anchor from '@project-serum/anchor';
+import { randomBytes } from 'crypto';
 
 export const ixWasmToJs = (ix: any):anchor.web3.TransactionInstruction => {
     return new anchor.web3.TransactionInstruction({
@@ -37,4 +38,8 @@ export const ixPack = async (ixs: anchor.web3.TransactionInstruction[]): Promise
     }
 
     return ixGroupArray;
+}
+
+export const randomU64 = ():bigint => {
+    return BigInt(`0x${randomBytes(8).toString("hex")}`);
 }

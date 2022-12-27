@@ -25,7 +25,7 @@ pub struct Initialize <'info> {
     #[account(
         init,
         payer=payer,
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
         space= 8 + Config::get_max_size() as usize,
     )]
@@ -41,7 +41,7 @@ pub struct RegisterBlueprint <'info> {
 
     #[account(
         constraint = config.authority.key() == payer.key(),
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Account<'info, Config>,
@@ -67,15 +67,14 @@ pub struct SystemInitMap<'info> {
     
     // Action Bundle
     #[account(
-        constraint = config.authority.key() == payer.key(), //Only System Auth can make new Maps
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Box<Account<'info, Config>>,
     #[account(
         mut,
         seeds=[
-            SEEDS_INSTANCEINDEX.as_slice(),
+            SEEDS_INSTANCEINDEX,
             registry_instance.key().as_ref()
         ],
         bump,
@@ -84,7 +83,7 @@ pub struct SystemInitMap<'info> {
 
     //Registry
     #[account(
-        seeds = [SEEDS_REGISTRYSIGNER.as_slice()],
+        seeds = [SEEDS_REGISTRYSIGNER],
         bump,
         seeds::program = registry_instance.registry.key()
     )]
@@ -109,8 +108,7 @@ pub struct SystemInitTile<'info> {
 
     // Action Bundle
     #[account(
-        constraint = config.authority.key() == payer.key(), //Only System Auth can make new Maps
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Box<Account<'info, Config>>,
@@ -120,7 +118,7 @@ pub struct SystemInitTile<'info> {
         realloc::payer = payer,
         realloc::zero = false,
         seeds=[
-            SEEDS_INSTANCEINDEX.as_slice(),
+            SEEDS_INSTANCEINDEX,
             registry_instance.key().as_ref()
         ],
         bump,
@@ -129,7 +127,7 @@ pub struct SystemInitTile<'info> {
 
     //Registry
     #[account(
-        seeds = [SEEDS_REGISTRYSIGNER.as_slice()],
+        seeds = [SEEDS_REGISTRYSIGNER],
         bump,
         seeds::program = registry_instance.registry.key()
     )]
@@ -139,6 +137,7 @@ pub struct SystemInitTile<'info> {
 
     //CoreDs
     pub coreds: Program<'info, CoreDs>, 
+    /// CHECK: Created via CPI
     pub registry_instance: Account<'info, RegistryInstance>,
 
     /// CHECK: Initalized through CPI
@@ -149,15 +148,14 @@ pub struct SystemInitTile<'info> {
 
 
 #[derive(Accounts)]
-pub struct SystemInstanceFeature<'info> {
+pub struct SystemInitFeature<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
 
     // Action Bundle
     #[account(
-        constraint = config.authority.key() == payer.key(), //Only System Auth can make new Maps
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Box<Account<'info, Config>>,
@@ -167,7 +165,7 @@ pub struct SystemInstanceFeature<'info> {
         realloc::payer = payer,
         realloc::zero = false,
         seeds=[
-            SEEDS_INSTANCEINDEX.as_slice(),
+            SEEDS_INSTANCEINDEX,
             registry_instance.key().as_ref()
         ],
         bump,
@@ -204,7 +202,7 @@ pub struct SystemInitPlayer<'info> {
     // Action Bundle
     #[account(
         constraint = config.authority.key() == payer.key(), //Only System Auth can make new Maps
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Box<Account<'info, Config>>,
@@ -214,7 +212,7 @@ pub struct SystemInitPlayer<'info> {
         realloc::payer = payer,
         realloc::zero = false,
         seeds=[
-            SEEDS_INSTANCEINDEX.as_slice(),
+            SEEDS_INSTANCEINDEX,
             registry_instance.key().as_ref()
         ],
         bump,
@@ -249,8 +247,7 @@ pub struct CreateGameInstance<'info>{
 
     // Action Bundle
     #[account(
-        constraint = config.authority.key() == payer.key(), //Only System Auth can make new Maps
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Box<Account<'info, Config>>,
@@ -259,7 +256,7 @@ pub struct CreateGameInstance<'info>{
         init,
         payer=payer,
         seeds=[
-            SEEDS_INSTANCEINDEX.as_slice(),
+            SEEDS_INSTANCEINDEX,
             registry_instance.key().as_ref()
         ],
         bump,
@@ -271,19 +268,19 @@ pub struct CreateGameInstance<'info>{
     #[account(
         seeds = [SEEDS_REGISTRYSIGNER.as_slice()],
         bump,
-        seeds::program = registry_instance.registry.key()
+        seeds::program = registry::id()
     )]
     pub registry_config: Account<'info, RegistryConfig>,
     pub registry_program: Program<'info, Registry>,
+    #[account(mut)]
     pub ab_registration: Box<Account<'info, ActionBundleRegistration>>,
 
 
     //CoreDs
     pub coreds: Program<'info, CoreDs>, 
-    pub registry_instance: Account<'info, RegistryInstance>,
     /// CHECK: Created via CPI in the coreds program
     #[account(mut)]
-    pub world_instance: AccountInfo<'info>,
+    pub registry_instance: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -292,14 +289,14 @@ pub struct ChangeGameState<'info> {
 
     // Action Bundle
     #[account(
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Box<Account<'info, Config>>,
     #[account(
         mut,
         seeds=[
-            SEEDS_INSTANCEINDEX.as_slice(),
+            SEEDS_INSTANCEINDEX,
             registry_instance.key().as_ref()
         ],
         bump,
@@ -332,7 +329,7 @@ pub struct SpawnUnit<'info> {
 
     //Action Bundle
     #[account(
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Box<Account<'info, Config>>,
@@ -342,7 +339,7 @@ pub struct SpawnUnit<'info> {
         realloc::payer = payer,
         realloc::zero = false,
         seeds=[
-            SEEDS_INSTANCEINDEX.as_slice(),
+            SEEDS_INSTANCEINDEX,
             registry_instance.key().as_ref()
         ],
         bump,
@@ -383,7 +380,7 @@ pub struct MoveUnit<'info> {
 
     //Action Bundle
     #[account(
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Box<Account<'info, Config>>,
@@ -430,7 +427,7 @@ pub struct AttackTile <'info> {
 
     //Action Bundle
     #[account(
-        seeds=[SEEDS_ABSIGNER.as_slice()],
+        seeds=[SEEDS_ABSIGNER],
         bump,
     )]
     pub config: Box<Account<'info, Config>>,

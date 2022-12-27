@@ -40,7 +40,7 @@ pub mod dominari {
         Ok(())
     }
 
-    pub fn system_initalize_map(ctx:Context<SystemInitMap>, entity_id:u64, max_x: u8, max_y: u8) -> Result<()> {
+    pub fn system_init_map(ctx:Context<SystemInitMap>, entity_id:u64, max_x: u8, max_y: u8) -> Result<()> {
         let reference = &ctx.accounts.config.components;
         let config_seeds:&[&[u8]] = &[
             SEEDS_ABSIGNER,
@@ -74,7 +74,6 @@ pub mod dominari {
             max_size: ComponentMetadata::get_max_size(), 
             data:  metadata_component
         });
-
 
         let mapmeta_component = ComponentMapMeta {
             max_x,
@@ -176,7 +175,7 @@ pub mod dominari {
         Ok(())
     }
     
-    pub fn system_instance_feature(ctx:Context<SystemInstanceFeature>, entity_id: u64) -> Result<()> {
+    pub fn system_init_feature(ctx:Context<SystemInitFeature>, entity_id: u64) -> Result<()> {
         // Check to make sure tile can be modified by payer
         let reference = &ctx.accounts.config.components;
         let tile_owner_component = ctx.accounts.tile_entity.components.get(&reference.owner).unwrap();
@@ -275,8 +274,14 @@ pub mod dominari {
     }
 
     pub fn create_game_instance(ctx:Context<CreateGameInstance>, instance:u64, game_config: GameConfig) -> Result<()> {
+        let config_seeds:&[&[u8]] = &[
+            SEEDS_ABSIGNER,
+            &[*ctx.bumps.get("config").unwrap()]
+        ];
+        let signer_seeds = &[config_seeds];
+
         // Instance the World
-        let instance_ctx = CpiContext::new(
+        let instance_ctx = CpiContext::new_with_signer(
             ctx.accounts.registry_program.to_account_info(),
             registry::cpi::accounts::InstanceRegistry {
                 payer: ctx.accounts.payer.to_account_info(),
@@ -286,7 +291,8 @@ pub mod dominari {
                 core_ds: ctx.accounts.coreds.to_account_info(),
                 action_bundle_registration: ctx.accounts.ab_registration.to_account_info(),
                 ab_signer: ctx.accounts.config.to_account_info(),
-            }
+            },
+            signer_seeds
         );
 
         registry::cpi::instance_registry(instance_ctx, instance)?;

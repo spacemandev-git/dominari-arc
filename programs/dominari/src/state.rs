@@ -33,6 +33,11 @@ impl MaxSize for RelevantComponentKeys {
     }
 }
 
+/**
+ * Specifically NOT giving this a Deserialize Trait for SDK
+ * Because it contains Vec<Pubkey> we need to have a wrapper on the SDK  
+ * that's Vec<string> that we then map into Vec<Pubkey> for this GameConfig
+ */
 #[cfg_attr(feature = "sdk", derive(serde::Serialize, serde::Deserialize))]
 #[derive(AnchorDeserialize, AnchorSerialize, Debug, Clone)]
 pub struct GameConfig {

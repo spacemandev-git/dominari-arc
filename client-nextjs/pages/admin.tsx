@@ -98,7 +98,7 @@ const AdminPage: NextPage = (props) => {
             return;
         }
         const componentSchemas = await schemaFiles[0].text();
-        let componentIndex = new ComponentIndex(dominariIDref.current?.value as string);
+        let componentIndex = new ComponentIndex(registryIDref.current?.value as string);
         for(let comp of componentSchemas.split("\n")){
             componentIndex.insert_component_url(comp);
         }
@@ -120,7 +120,7 @@ const AdminPage: NextPage = (props) => {
             let blueprintFile = blueprintFiles?.item(i);
             let ix = ixWasmToJs(dominari.register_blueprint(
                 publicKey?.toBase58() as string, 
-                blueprintFile?.name as string, 
+                blueprintFile?.name.split(".")[0] as string, 
                 componentIndex,
                 toml.parse(await blueprintFile?.text() as string)) 
             );
@@ -200,7 +200,6 @@ Initialization
 Game Loop
 1. Create Game
     -> Create Instance Index
-    -> Add Instance to AB Registration
     -> Initalize Map
     -> Initalize Tiles
 2. Toggle Game State

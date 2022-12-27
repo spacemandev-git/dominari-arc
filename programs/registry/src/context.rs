@@ -45,7 +45,10 @@ pub struct InstanceRegistry<'info>{
 
     #[account(
         mut,
-        constraint = action_bundle_registration.action_bundle.key() == ab_signer.key()
+        constraint = action_bundle_registration.action_bundle.key() == ab_signer.key(),
+        realloc = action_bundle_registration.to_account_info().data_len() + 8, //getting a new instance
+        realloc::payer = payer,
+        realloc::zero = false,
     )]
     pub action_bundle_registration: Account<'info, ActionBundleRegistration>,
 
@@ -148,10 +151,14 @@ pub struct InitEntity<'info> {
         constraint = registry_instance.registry.key() == program_id.key() && action_bundle_registration.instances.contains(&registry_instance.instance)
     )]
     pub registry_instance: Account<'info, RegistryInstance>,
+
+    #[account(
+        constraint = action_bundle_registration.action_bundle.key() == action_bundle.key()
+    )]
     pub action_bundle: Signer<'info>,
     // All action_bundles can make any entities they want
     #[account(
-        constraint = action_bundle_registration.action_bundle.key() == action_bundle.key() && check_sys_registry(&components.keys().cloned().collect(), &action_bundle_registration.components)
+        constraint = check_sys_registry(&components.keys().cloned().collect(), &action_bundle_registration.components)
     )]
     pub action_bundle_registration: Account<'info, ActionBundleRegistration>,
     pub core_ds: Program<'info, CoreDs>,     
@@ -258,7 +265,7 @@ pub struct RemoveComponent<'info>{
 }
 
 #[derive(Accounts)]
-#[instruction(components: Vec<Pubkey>, data:Vec<Vec<u8>>)]
+#[instruction(components: Vec<(Pubkey, Vec<u8>)>)]
 pub struct ModifyComponent<'info>{
     //Used to Sign Tx for the CPI
     #[account(
@@ -273,12 +280,15 @@ pub struct ModifyComponent<'info>{
     )]
     pub entity: Account<'info, Entity>,
     
+    #[account(
+        constraint = action_bundle_registration.action_bundle.key() == action_bundle.key()
+    )]
     pub action_bundle: Signer<'info>,
     
     // System is allowed to modify the component it's adding
     // System is a signer
     #[account(
-        constraint = action_bundle_registration.action_bundle.key() == action_bundle.key() && check_sys_registry(&components, &action_bundle_registration.components)
+        constraint = check_sys_registry(&components.iter().map(|comp_tuple|{return comp_tuple.0}).collect(), &action_bundle_registration.components)
     )]
     pub action_bundle_registration: Account<'info, ActionBundleRegistration>,
 
@@ -321,6 +331,7 @@ pub struct RemoveEntity<'info>{
 pub fn check_sys_registry(components: &Vec<Pubkey>, action_bundle_components: &BTreeSet<Pubkey>) -> bool {
     for comp in components {
         if !action_bundle_components.contains(comp) {
+            msg!("{} is not in AB Registration", comp);
             return false;
         }
     }

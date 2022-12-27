@@ -1,7 +1,7 @@
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { UnsafeBurnerWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { UnsafeBurnerWalletAdapter, PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import type { AppProps } from 'next/app';
 import type { FC } from 'react';
 import React, { useMemo, useState } from 'react';
@@ -32,7 +32,7 @@ const App: FC<AppProps> = ({ Component, pageProps }) => {
              * instantiate its legacy wallet adapter here. Common legacy adapters can be found
              * in the npm package `@solana/wallet-adapter-wallets`.
              */
-            new UnsafeBurnerWalletAdapter(),
+            new PhantomWalletAdapter(),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [endpoint]

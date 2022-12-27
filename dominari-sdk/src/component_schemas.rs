@@ -13,11 +13,11 @@ pub struct ComponentIndex {
 #[wasm_bindgen]
 impl ComponentIndex {
     #[wasm_bindgen(constructor)]
-    pub fn new(dominari_id: &str) -> Self {
+    pub fn new(registry_id: &str) -> Self {
         console_error_panic_hook::set_once();
         ComponentIndex { 
-            registry: Pubkey::from_str(dominari_id).unwrap(),
-            index: bimap::BiHashMap::<String, Pubkey>::new() 
+            registry: Pubkey::from_str(registry_id).unwrap(),
+            index: ComponentIndex::get_inital_hashmap(Pubkey::from_str(registry_id).unwrap()) 
         }
     }
 
@@ -30,12 +30,63 @@ impl ComponentIndex {
         self.index.insert(String::from(schema), pubkey);
     }
 
+    pub fn get_component_pubkey_as_str(&self, schema:&str) -> String {
+        let pubkey = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_COMPONENTREGISTRATION,
+            schema.as_bytes().as_ref(),
+        ], &self.registry).0;
+        
+        return pubkey.to_string();
+    }
+
+
     pub fn get_component_pubkey(&self, schema:&str) -> Pubkey {
         self.index.get_by_left(&String::from(schema)).unwrap().clone()
     }
 
     pub fn get_component_url(&self, pubkey:&str) -> String {
         self.index.get_by_right(&Pubkey::from_str(pubkey).unwrap()).unwrap().clone()
+    }
+}
+
+impl ComponentIndex {
+
+    /**
+     * performance improvement so we're not recomputing everytime we get_component_pubkey
+     */
+    pub fn get_inital_hashmap(registry_id:Pubkey) -> bimap::BiHashMap<String, Pubkey> {
+        let mut map = bimap::BiHashMap::<String, Pubkey>::new();
+        let components_urls = vec![
+            "metadata",
+            "mapmeta",
+            "location",
+            "feature",
+            "owner",
+            "value",
+            "occupant",
+            "player_stats",
+            "last_used",
+            "feature_rank",
+            "range",
+            "drop_table",
+            "uses",
+            "healing_power",
+            "health",
+            "damage",
+            "troop_class",
+            "active",
+            "cost",
+            "offchain_metadata"
+        ];
+
+        for url in components_urls {
+            let pubkey = Pubkey::find_program_address(&[
+                registry::constant::SEEDS_COMPONENTREGISTRATION,
+                url.as_bytes().as_ref(),
+            ], &registry_id).0;
+            map.insert(String::from(url), pubkey);
+        }
+        return map;
     }
 }
 
