@@ -32,3 +32,17 @@ pub struct WasmTroop {
     pub id: String
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct WasmPlayer {
+    pub name: String,
+    pub image: String,
+    pub score: String, //u64 as String
+    pub kills: String, //u64 as String
+    //Blueprint Names rather than Pubkey
+    pub cards: Vec<String>
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ComponentDropTableWASM {
+    pub drop_table: Vec<String>
+}

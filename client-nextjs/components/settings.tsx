@@ -14,6 +14,7 @@ const Settings: FC = () => {
     let gameContext = useContext(GameContext);
     const privKeyRef = useRef<HTMLInputElement>(null);
     const instanceRef = useRef<HTMLInputElement>(null);
+    const selectInstanceRef = useRef<HTMLSelectElement>(null);
     const configFileRef = useRef<HTMLInputElement>(null);
 
     const [balance, updateBalance] = useState(0);
@@ -141,7 +142,7 @@ const Settings: FC = () => {
     const getInstanceList = () => {
         const instanceList = ["280357192616367311"]
         return instanceList.map((instance:string) => {
-            return (<option key={instance}>{instance}</option>)
+            return (<option key={instance} value={instance}>{instance}</option>)
         })
     }
 
@@ -182,14 +183,19 @@ const Settings: FC = () => {
             </div>
             <div className="mt-12 flex flex-row gap-4">
                 <label>Game ID</label>
-                <input type="text" defaultValue={gameContext.instance} ref={instanceRef}></input>
+                <input type="text" defaultValue={gameContext.instance.toString()} ref={instanceRef}></input>
                 <button className="bg-slate-600" onClick={() => {
                     if(parseInt(instanceRef.current?.value!) >= 0) {
-                        gameContext.changeInstance(parseInt(instanceRef.current?.value!));
+                        gameContext.changeInstance(BigInt(instanceRef.current?.value!));
                     }
                 }}>Change Game ID</button>
                 <label>Created Game IDs</label>
-                <select>
+                <select onSelect={() => {
+                    if(parseInt(instanceRef.current?.value!) >= 0) {
+                        gameContext.changeInstance(BigInt(selectInstanceRef.current?.value!));
+                        console.log(gameContext.instance);
+                    }
+                }}>
                     {getInstanceList()}
                 </select>
             </div>

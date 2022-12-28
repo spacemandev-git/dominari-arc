@@ -5,6 +5,7 @@ use anchor_lang::prelude::*;
 
 #[wasm_bindgen]
 pub struct ComponentIndex {
+    #[wasm_bindgen(skip)]
     pub registry: Pubkey,
     #[wasm_bindgen(skip)]
     pub index: bimap::BiHashMap<String, Pubkey>

@@ -24,9 +24,9 @@ import {Dominari, GameState} from 'dominari-sdk';
 export const GameContext = createContext({} as GameContextInterface);
 
 const GamePage: NextPage = (props:any) => {
-    const [nav, changeNav] = useState(NavEnum.Settings);
+    const [nav, changeNav] = useState(NavEnum.GameBoard);
     const [privateKey, changePrivateKey] = useState(Keypair.fromSecretKey(decode(DUMMY_PRIV_KEY)));
-    const [instance, changeInstance] = useState(-1);
+    const [instance, changeInstance] = useState(BigInt("280357192616367311"));
     const [dominari, updateDominari] = useState(new Dominari(DOMINARI_PROGRAM_ID.toBase58()))
     //const [gamestate, updateGameState] = useState(null);
 
@@ -73,7 +73,7 @@ export interface GameContextInterface {
     dominari: Dominari,
 
     // Game Metainformation
-    instance: number,
+    instance: bigint,
     changeInstance: Function,
 
     //Nav Info

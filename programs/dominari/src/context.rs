@@ -201,7 +201,6 @@ pub struct SystemInitPlayer<'info> {
 
     // Action Bundle
     #[account(
-        constraint = config.authority.key() == payer.key(), //Only System Auth can make new Maps
         seeds=[SEEDS_ABSIGNER],
         bump,
     )]

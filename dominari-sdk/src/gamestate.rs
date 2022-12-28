@@ -5,8 +5,8 @@ use solana_client_wasm::WasmClient;
 use dominari::account::InstanceIndex;
 use core_ds::account::Entity;
 use dominari::component::*;
+use crate::{component_schemas::ComponentIndex, coreds::{get_registry_instance, get_keys_from_id}, wasm_wrappers::{WasmTile, WasmFeature, WasmTroop, WasmPlayer}, blueprints::BlueprintIndex};
 use web_sys::console;
-use crate::{component_schemas::ComponentIndex, coreds::{get_registry_instance, get_keys_from_id}, wasm_wrappers::{WasmTile, WasmFeature, WasmTroop}};
 
 #[wasm_bindgen]
 pub struct GameState {
@@ -21,12 +21,15 @@ pub struct GameState {
     pub index: Option<InstanceIndex>,
     #[wasm_bindgen(skip)]
     pub entities: HashMap<u64, Entity>,
+    #[wasm_bindgen(skip)]
+    pub blueprint_index: BlueprintIndex,
 }
 
 #[wasm_bindgen]
 impl GameState{
     #[wasm_bindgen(constructor)]
     pub fn new(rpc:&str, dominari_id:&str, registry_id:&str, instance:u64) -> Self {
+        console_error_panic_hook::set_once();
         GameState { 
             dominari_program_id: Pubkey::from_str(dominari_id).unwrap(), 
             registry_program_id: Pubkey::from_str(registry_id).unwrap(), 
@@ -34,7 +37,15 @@ impl GameState{
             component_index: ComponentIndex::new(registry_id),
             client: WasmClient::new(rpc), 
             index: None, 
-            entities: HashMap::new()
+            entities: HashMap::new(),
+            blueprint_index: BlueprintIndex::new(dominari_id)
+        }
+    }
+
+    pub fn add_blueprints(&mut self, blueprints_json: JsValue) {
+        let blueprints: Vec<String> = serde_wasm_bindgen::from_value(blueprints_json).unwrap();
+        for blueprint in blueprints {
+            self.blueprint_index.insert_blueprint_name(blueprint);
         }
     }
 
@@ -93,6 +104,13 @@ impl GameState{
         self.entities = entities;
     }
 
+    pub async fn update_entity(&mut self, entity_id:u64) {
+        // Don't worry about finding this in index, just fetch the account and update the entities table
+        let pubkey = get_keys_from_id(get_registry_instance(registry::id(), self.instance), vec![entity_id]);
+        let entity:Entity = fetch_account(&self.client, &pubkey[0]).await.unwrap();
+        self.entities.insert(entity_id, entity);
+    }
+
     pub fn get_tile_id(&self, x:u8, y:u8) -> String {
         if self.index.is_none() {
             throw_str("Index isn't built yet!");
@@ -108,7 +126,6 @@ impl GameState{
     }
 
     pub fn get_map(&self) -> JsValue {
-
         if self.index.is_none() {
             throw_str("Load state first!")
         }
@@ -167,6 +184,29 @@ impl GameState{
         
         serde_wasm_bindgen::to_value(&map).unwrap()
     }
+
+    /**
+     * @param user is Pubkey
+     */
+    pub fn get_player_info(&self, user: &str) -> JsValue {
+        let pubkey = Pubkey::from_str(user).unwrap();
+        // Search through Player Entities to see if any match 
+        let player_id = self.get_player(pubkey);
+        if player_id.is_none() {
+            return serde_wasm_bindgen::to_value(&None::<WasmPlayer>).unwrap();
+        } else {
+            let stats = self.get_entity_player_stats(&player_id.unwrap()).unwrap();
+            let cardnames = stats.cards.iter().map(|&cardkey| {return self.blueprint_index.get_blueprint_name(cardkey.to_string())}).collect(); 
+            let player = WasmPlayer {
+                name: stats.name,
+                image: stats.image,
+                score: stats.score.to_string(),
+                kills: stats.kills.to_string(),
+                cards: cardnames
+            };
+            return serde_wasm_bindgen::to_value(&player).unwrap();
+        }
+    }
 }
 
 /**
@@ -174,6 +214,21 @@ impl GameState{
  */
 impl GameState {
     
+    pub fn get_player(&self, player: Pubkey) -> Option<u64> {
+        if self.index.is_none() {
+            return None;
+        }
+
+        for player_id in self.index.as_ref().unwrap().players.iter() {
+            let player_key = self.get_entity_player_stats(&player_id).unwrap().key;
+            if player.key() == player_key.key() {
+                return Some(player_id.to_owned());
+            }
+        }
+
+        return None;
+    }
+
     pub fn get_entity(&self, entity_id:u64) -> Option<&Entity> {
         return self.entities.get(&entity_id)
     }

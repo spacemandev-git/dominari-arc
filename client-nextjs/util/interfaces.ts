@@ -31,8 +31,8 @@ interface Feature {
 export interface WasmTile {
     x: number,
     y: number,
-    feature: WasmFeature | null,
-    troop: WasmTroop | null,
+    feature: WasmFeature,
+    troop: WasmTroop,
 }
 
 interface WasmFeature {
@@ -43,4 +43,13 @@ interface WasmFeature {
 interface WasmTroop {
     name: String,
     id: String
+}
+
+//dominari-sdk::wasm_wrappers::WasmPlayer
+export interface WasmPlayer {
+    name: String,
+    image: String,
+    score: String,
+    kills: String,
+    cards: String[]
 }
