@@ -1,6 +1,6 @@
 import { useState, useRef, useContext, useMemo, useEffect } from 'react';
 import { WasmTile, WasmPlayer } from '../util/interfaces';
-import { Stage, Container } from 'react-pixi-fiber'
+import { Stage, Container, render } from 'react-pixi-fiber'
 import * as PIXI from 'pixi.js';
 import { DOMINARI_PROGRAM_ID, REGISTRY_PROGRAM_ID } from '../util/constants';
 import { useConnection } from '@solana/wallet-adapter-react';
@@ -8,7 +8,6 @@ import { GameState } from 'dominari-sdk';
 import { GameContext } from '../pages/game';
 import { ixWasmToJs, randomU64 } from '../util/util';
 import { Transaction } from '@solana/web3.js';
-import { useEffectOnce } from 'usehooks-ts';
 
 /*
 if (window.gamestate == undefined || window.gamestate == null) {
@@ -32,7 +31,8 @@ const Map = () => {
         REGISTRY_PROGRAM_ID.toString(),
         gameContext.instance
     );
-    
+    const [selectedTile, selectTile] = useState("");
+
     const setup = async () => {
         await gamestate.load_state();
         const blueprintJson = await (await fetch('blueprints/blueprints.json')).json()
@@ -41,6 +41,7 @@ const Map = () => {
         console.log(gameContext.privateKey.publicKey.toString());
         setPlayer(gamestate.get_player_info(gameContext.privateKey.publicKey.toString()));
     }
+
 
     let renderMap = (gamestate: GameState) => {
         let grid:WasmTile[][] = gamestate.get_map();
@@ -57,7 +58,7 @@ const Map = () => {
 
                 // XY Coordinate on Top Left
                 let text = new PIXI.Text(`${colNum},${rowNum}`, {
-                    fontFamily: 'Sams-Serif',
+                    fontFamily: 'Sans-Serif',
                     fontSize: 12,
                     fill: 0xFFFFFF,
                     align: 'center'
@@ -83,18 +84,35 @@ const Map = () => {
                 // Add Troop Icon
                 let troopSprite = PIXI.Sprite.from(`assets/add_unit.png`);
                 troopSprite.interactive = true;
+
                 if(tileInfo.troop){
+                    let box:PIXI.Graphics | undefined = containerRef.current?.getChildByName!(`${colNum},${rowNum}`);
                     troopSprite = PIXI.Sprite.from(`assets/troops/${tileInfo.troop.name.toLowerCase()}.png`);
                     troopSprite.on("mousedown", () => {
+                        if(selectedTile == `${colNum},${rowNum}`){
+                            selectTile("");
+                            box!.beginFill(0x000000);
+                            box!.drawRect(5+(colNum*boxSize), 5+(rowNum*boxSize), boxSize-5, boxSize-5);            
+                        } else {
+                            box!.beginFill(0xee6363);
+                            box!.drawRect(5+(colNum*boxSize), 5+(rowNum*boxSize), boxSize-5, boxSize-5);
+                            selectTile(`${colNum},${rowNum}`);
+                        }
                         console.log("Move Troop")
                     })
                 } else {
                     troopSprite.on("mousedown", () => {
                         console.log("Add Unit!")
-                        let box:PIXI.Graphics | undefined = containerRef.current?.getChildByName!(`${colNum},${rowNum}`);
-                        if(box){
-                            box.beginFill(0xee6363);
-                            box.drawRect(5+(colNum*boxSize), 5+(rowNum*boxSize), boxSize-5, boxSize-5);
+                        if(selectedTile == `${colNum},${rowNum}`){
+                            console.log("Tile currently selected")
+                            selectTile("");
+                            box!.beginFill(0x000000);
+                            box!.drawRect(5+(colNum*boxSize), 5+(rowNum*boxSize), boxSize-5, boxSize-5);            
+                        } else {
+                            console.log("Tile not selected")
+                            selectTile(`${colNum},${rowNum}`);
+                            box!.beginFill(0xee6363);
+                            box!.drawRect(5+(colNum*boxSize), 5+(rowNum*boxSize), boxSize-5, boxSize-5);
                         }
                     })
                 }
@@ -110,10 +128,20 @@ const Map = () => {
         }
     }
 
-    useEffectOnce(() => {
-        setup().then(() => {return;})
+    useEffect(() => {
+        setup()
+    }, [])
 
-    });
+    useEffect(()=>{
+        console.log(gamestate.is_state_loaded)
+        if(gamestate.is_state_loaded){
+            console.log("State loaded");
+            renderMap(gamestate);
+        } else {
+            console.log("State not loaded");
+        }
+    }, [selectedTile])
+
     return(
         <div className="flex flex-col">
             <div className="h-10 items-center mt-4">

@@ -23,6 +23,7 @@ pub struct GameState {
     pub entities: HashMap<u64, Entity>,
     #[wasm_bindgen(skip)]
     pub blueprint_index: BlueprintIndex,
+    pub is_state_loaded: bool
 }
 
 #[wasm_bindgen]
@@ -38,7 +39,8 @@ impl GameState{
             client: WasmClient::new(rpc), 
             index: None, 
             entities: HashMap::new(),
-            blueprint_index: BlueprintIndex::new(dominari_id)
+            blueprint_index: BlueprintIndex::new(dominari_id),
+            is_state_loaded: false
         }
     }
 
@@ -66,6 +68,7 @@ impl GameState{
     }
 
     pub async fn load_state(&mut self) {
+        self.is_state_loaded = true;
         let registry_instance = get_registry_instance(registry::id(), self.instance);
         self.update_instance_index().await;
         

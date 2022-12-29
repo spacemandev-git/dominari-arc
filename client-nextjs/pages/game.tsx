@@ -1,6 +1,5 @@
 import type { NextPage } from 'next';
-import React, {createContext, useState, useMemo} from 'react';
-import {useEffectOnce} from 'usehooks-ts';
+import React, {createContext, useState, useEffect} from 'react';
 import { Keypair, PublicKey } from '@solana/web3.js';
 import { DOMINARI_PROGRAM_ID, DUMMY_PRIV_KEY } from '../util/constants';
 import Menu from '../components/menu';
@@ -30,7 +29,7 @@ const GamePage: NextPage = (props:any) => {
     const [dominari, updateDominari] = useState(new Dominari(DOMINARI_PROGRAM_ID.toBase58()))
     //const [gamestate, updateGameState] = useState(null);
 
-    useEffectOnce(() => {
+    useEffect(() => {
         // bs58 encoded secret key
         const previousPrivateKey = localStorage.getItem('privateKey');
         if(previousPrivateKey == null || previousPrivateKey == "null"){
@@ -41,7 +40,7 @@ const GamePage: NextPage = (props:any) => {
             let pKey = Keypair.fromSecretKey(decode(previousPrivateKey))
             changePrivateKey(pKey);
         }
-    })
+    }, [])
 
     return (
         <GameContext.Provider value={{

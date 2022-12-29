@@ -7,7 +7,7 @@ import toml from 'toml';
 import { ixPack, ixWasmToJs, randomU64 } from '../util/util';
 import { ConfigFileInterface } from '../util/interfaces';
 import { GameState } from 'dominari-sdk';
-import { DOMINARI_PROGRAM_ID, LS_GAMEINSTANCES, REGISTRY_PROGRAM_ID } from '../util/constants';
+import { DOMINARI_PROGRAM_ID, LOCAL_STORAGE_GAMEINSTANCES as LS_GAMEINSTANCES, REGISTRY_PROGRAM_ID } from '../util/constants';
 
 const Settings: FC = () => {
     const {connection} = useConnection();
