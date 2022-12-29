@@ -1,6 +1,6 @@
 import { useState, useRef, useContext, useMemo, useEffect } from 'react';
 import { WasmTile, WasmPlayer } from '../util/interfaces';
-import { Stage, Container, render } from 'react-pixi-fiber'
+import { Stage, Container } from 'react-pixi-fiber'
 import * as PIXI from 'pixi.js';
 import { DOMINARI_PROGRAM_ID, REGISTRY_PROGRAM_ID } from '../util/constants';
 import { useConnection } from '@solana/wallet-adapter-react';

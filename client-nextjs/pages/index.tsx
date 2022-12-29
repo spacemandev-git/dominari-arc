@@ -8,6 +8,9 @@ import { useLocalStorage } from "usehooks-ts";
 import {encode, decode} from 'bs58';
 import toml from 'toml';
 import {randomU64, ixPack, ixWasmToJs} from '../util/util';
+import { Stage, Container } from 'react-pixi-fiber'
+import { WasmTile, WasmPlayer } from '../util/interfaces';
+import * as PIXI from 'pixi.js';
 
 //@ts-ignore
 import NoSSR from 'react-no-ssr';
@@ -343,6 +346,162 @@ const Settings = () => {
 }
 
 const Map = () => {
-    return(<></>)
+    // Context Imports
+    const {
+        connection,
+        privateKey,
+        gamestate,
+        dominari
+    } = useContext(DominariContext);
+
+    // Refs
+    let containerRef = useRef<Container>(null);
+    let stageRef = useRef<Stage>(null);
+
+    // State
+    const [player, setPlayer] = useState({} as WasmPlayer);
+    const [selectedTile, selectTile] = useState("");
+
+    // Render Steps
+    // Load State and setup listenrs
+    useEffect(() => {
+        const setup = async () => {
+            await gamestate.load_state();
+            const blueprintJson = await (await fetch('blueprints/blueprints.json')).json()
+            gamestate.add_blueprints(blueprintJson);
+            setPlayer(gamestate.get_player_info(privateKey.publicKey.toString()));
+        }
+
+        setup().then(() => {
+            // Setup Listeners (Call Render Map on each Change)
+
+            // Render Map
+            renderMap();
+        });
+    }, [])
+
+    
+    useEffect(() => {
+        if(gamestate.is_state_loaded){
+            renderMap();            
+        }
+    }, [selectedTile])
+    
+
+    // Constants
+    const TILE_SIZE = 125;
+    const UNSLECTED_TILE_COLOR = 0x000000;
+    const SELECTED_TILE_COLOR = 0xee6363;
+
+    // Functions
+    const renderMap = () => {
+        console.log("Rendering Map!");
+        let grid:WasmTile[][] = gamestate.get_map();
+
+                for(let rowNum=0; rowNum<grid.length; rowNum++){
+            let row = grid[rowNum];
+            for(let colNum=0; colNum<row.length; colNum++){
+                let box = new PIXI.Graphics();
+                box.name = `${colNum},${rowNum}`;
+                if(selectedTile == box.name) {
+                    box.beginFill(0xee6363);
+                } else {
+                    box.beginFill(0x000000);
+                }
+                box.drawRect(5+(colNum*TILE_SIZE), 5+(rowNum*TILE_SIZE), TILE_SIZE-5, TILE_SIZE-5);
+                containerRef.current?.addChild!(box);
+
+                // XY Coordinate on Top Left
+                let text = new PIXI.Text(`${colNum},${rowNum}`, {
+                    fontFamily: 'Sans-Serif',
+                    fontSize: 12,
+                    fill: 0xFFFFFF,
+                    align: 'center'
+                });    
+                text.position.x = 10 + (TILE_SIZE * colNum)
+                text.position.y = 10 + (TILE_SIZE * rowNum)
+                containerRef.current?.addChild!(text);
+                
+                // TileInfo
+                let tileInfo:WasmTile = grid[rowNum][colNum];
+
+                // Add Feature Icon
+                if(tileInfo.feature){
+                    let featureSprite = PIXI.Sprite.from(`assets/features/${tileInfo.feature.name.toLowerCase()}.png`);
+                    featureSprite.anchor.x = 0;
+                    featureSprite.anchor.y = 0;
+                    featureSprite.width = 50;
+                    featureSprite.height = 50;
+                    featureSprite.position.x = 80 + (TILE_SIZE * colNum);
+                    featureSprite.position.y = 10 + (TILE_SIZE * rowNum);
+                    containerRef.current?.addChild!(featureSprite);
+                }
+                // Add Troop Icon
+                let troopSprite = PIXI.Sprite.from(`assets/add_unit.png`);
+                troopSprite.interactive = true;
+
+                if(tileInfo.troop){
+                    let box:PIXI.Graphics | undefined = containerRef.current?.getChildByName!(`${colNum},${rowNum}`);
+                    troopSprite = PIXI.Sprite.from(`assets/troops/${tileInfo.troop.name.toLowerCase()}.png`);
+                    troopSprite.on("mousedown", () => {
+                        if(selectedTile == `${colNum},${rowNum}`){
+                            selectTile("");
+                            box!.drawRect(5+(colNum*TILE_SIZE), 5+(rowNum*TILE_SIZE), TILE_SIZE-5, TILE_SIZE-5);            
+                        } else {
+                            box!.drawRect(5+(colNum*TILE_SIZE), 5+(rowNum*TILE_SIZE), TILE_SIZE-5, TILE_SIZE-5);
+                            selectTile(`${colNum},${rowNum}`);
+                        }
+                        console.log("Move Troop")
+                    })
+                } else {
+                    troopSprite.on("mousedown", () => {
+                        console.log("Add Unit!")
+                        if(selectedTile == `${colNum},${rowNum}`){
+                            console.log("Tile currently selected")
+                            selectTile("");
+                        } else {
+                            console.log("Tile not selected")
+                            selectTile(`${colNum},${rowNum}`);
+                        }
+                    })
+                }
+                troopSprite.anchor.x = 0;
+                troopSprite.anchor.y = 0;
+                troopSprite.width = 50;
+                troopSprite.height = 50;
+                troopSprite.position.x = 10 + (TILE_SIZE * colNum);
+                troopSprite.position.y = 70 + (TILE_SIZE * rowNum);
+                containerRef.current?.addChild!(troopSprite);
+            }
+        }
+
+    }
+
+    return(
+        <div>
+            <div className="h-10 gap-4">
+                {player?.name && <PlayerFragment></PlayerFragment>}
+                {!player?.name && <CreatePlayerFragment></CreatePlayerFragment>}
+            </div>
+            <Stage options={{height: 125*8 +5, width: 125*8 +5, backgroundColor: 0xFFFFFF}} ref={stageRef}>
+                <Container ref={containerRef}></Container>
+            </Stage>
+        </div>
+    )
 }
 
+const PlayerFragment = () => {
+    return(
+        <div>
+            <label>Player Logged In</label>
+        </div>
+    )
+}
+
+const CreatePlayerFragment = () => {
+    return(
+        <div>
+            <label>Create Player</label>
+        </div>
+    )
+}
