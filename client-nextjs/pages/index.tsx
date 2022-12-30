@@ -1,6 +1,6 @@
 import { NextPage } from "next"
 import { FaGamepad, FaWrench } from 'react-icons/fa';
-import { createContext, useRef, useState, useEffect, useContext, ReactNode } from "react";
+import { createContext, useRef, useState, useEffect, useContext } from "react";
 import { Dominari, GameState } from "dominari-sdk";
 import { DOMINARI_PROGRAM_ID, LOCAL_STORAGE_GAMEINSTANCES, LOCAL_STORAGE_PRIVATEKEY, REGISTRY_PROGRAM_ID } from "../util/constants";
 import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
@@ -9,7 +9,7 @@ import {encode, decode} from 'bs58';
 import toml from 'toml';
 import {randomU64, ixPack, ixWasmToJs} from '../util/util';
 import { Stage, Container } from 'react-pixi-fiber'
-import { WasmTile, WasmPlayer } from '../util/interfaces';
+import { WasmTile, WasmPlayer, NavEnum, Blueprints } from '../util/interfaces';
 import * as PIXI from 'pixi.js';
 
 //@ts-ignore
@@ -25,11 +25,8 @@ export interface DominariContextInterface {
     gamestate: GameState,
     setInstance: Function,
     dominari: Dominari,
-}
-
-enum NavEnum {
-    Settings,
-    Map
+    blueprints: Blueprints,
+    setNav: Function // for debug to instantly switch after game state loaded
 }
 
 const Home: NextPage = () => {
@@ -41,13 +38,25 @@ const Home: NextPage = () => {
     const [instance, setInstance] = useState(BigInt("0"));
     const [privateKey, setPrivateKey] = useState(new Keypair());
     const [privateKeyStr, setPrivateKeyStr] = useLocalStorage(LOCAL_STORAGE_PRIVATEKEY, "");
-
+    const [blueprints, setBlueprints] = useState({} as Blueprints);
+ 
     let gamestate = useRef<GameState>(new GameState(
         rpc,
         DOMINARI_PROGRAM_ID.toString(),
         REGISTRY_PROGRAM_ID.toString(),
         instance
     ));
+
+    // Load Blueprints
+    useEffect(() => {
+        const blueprintSetup = async () => {
+            return await (await fetch('blueprints/blueprints.json')).json()
+            
+        };
+        blueprintSetup().then((blueprintJson: Blueprints) => {
+            setBlueprints(blueprintJson);
+        })
+    }, [])
 
     useEffect(() => {
         console.log(`Changing connection to ${rpc}`);
@@ -83,6 +92,8 @@ const Home: NextPage = () => {
                     gamestate: gamestate.current,
                     setInstance,
                     dominari,
+                    blueprints,
+                    setNav,
                 }}>
                 <div className="grid grid-col-2">
                     <div className="fixed top-0 left-0 h-screen w-16 flex flex-col
@@ -114,7 +125,8 @@ const Settings = () => {
         setPrivateKeyStr,
         gamestate,
         setInstance,
-        dominari
+        dominari,
+        setNav
     } = useContext(DominariContext);
 
 
@@ -331,6 +343,8 @@ const Settings = () => {
                     //console.log(selection.target.value);
                     // Update Game Instance when Selection Made
                     setInstance(BigInt(selection.target.value));
+                    instanceRef.current!.value = selection.target.value;
+                    alert("Game Loaded, switch to Map!");
                 }}>
                     <option>Select Instance</option>
                     {getInstanceOptions()}
@@ -351,7 +365,8 @@ const Map = () => {
         connection,
         privateKey,
         gamestate,
-        dominari
+        dominari,
+        blueprints
     } = useContext(DominariContext);
 
     // Refs
@@ -361,14 +376,15 @@ const Map = () => {
     // State
     const [player, setPlayer] = useState({} as WasmPlayer);
     const [selectedTile, selectTile] = useState("");
+    const [showAddTroopModal, setTroopModal] = useState(false);
+    const [showUseFeatureModal, setFeatureModal] = useState(false);
 
     // Render Steps
     // Load State and setup listenrs
     useEffect(() => {
         const setup = async () => {
             await gamestate.load_state();
-            const blueprintJson = await (await fetch('blueprints/blueprints.json')).json()
-            gamestate.add_blueprints(blueprintJson);
+            gamestate.add_blueprints(Object.keys(blueprints));
             setPlayer(gamestate.get_player_info(privateKey.publicKey.toString()));
         }
 
@@ -404,9 +420,9 @@ const Map = () => {
                 let box = new PIXI.Graphics();
                 box.name = `${colNum},${rowNum}`;
                 if(selectedTile == box.name) {
-                    box.beginFill(0xee6363);
+                    box.beginFill(SELECTED_TILE_COLOR);
                 } else {
-                    box.beginFill(0x000000);
+                    box.beginFill(UNSLECTED_TILE_COLOR);
                 }
                 box.drawRect(5+(colNum*TILE_SIZE), 5+(rowNum*TILE_SIZE), TILE_SIZE-5, TILE_SIZE-5);
                 containerRef.current?.addChild!(box);
@@ -462,6 +478,7 @@ const Map = () => {
                         } else {
                             console.log("Tile not selected")
                             selectTile(`${colNum},${rowNum}`);
+                            setTroopModal(true);
                         }
                     })
                 }
@@ -479,10 +496,11 @@ const Map = () => {
 
     return(
         <div>
-            <div className="h-10 gap-4">
-                {player?.name && <PlayerFragment></PlayerFragment>}
-                {!player?.name && <CreatePlayerFragment></CreatePlayerFragment>}
+            <div className="h-10 gap-4 items-center mt-4 ml-2">
+                {player?.name && <PlayerFragment {...{player}}></PlayerFragment>}
+                {!player?.name && <CreatePlayerFragment {...{setPlayer}}></CreatePlayerFragment>}
             </div>
+            {showAddTroopModal && <AddTroopModal {...{setShowModal: setTroopModal, cards: player.cards}}></AddTroopModal>}
             <Stage options={{height: 125*8 +5, width: 125*8 +5, backgroundColor: 0xFFFFFF}} ref={stageRef}>
                 <Container ref={containerRef}></Container>
             </Stage>
@@ -490,18 +508,185 @@ const Map = () => {
     )
 }
 
-const PlayerFragment = () => {
+const PlayerFragment = ({player}: {player:WasmPlayer}) => {
+    const {
+        gamestate
+    } = useContext(DominariContext);
+
     return(
-        <div>
-            <label>Player Logged In</label>
-        </div>
+        <div className="flex gap-4">
+            <p>{player.name}</p>
+            <label>Score</label>
+            <p>{player.score}</p>
+            <label>Kills</label>
+            <p>{player.kills}</p>
+            <label>Game State: {gamestate.get_play_phase()}</label>
+            <button>Pause/Play</button>
+        </div>    
     )
 }
 
-const CreatePlayerFragment = () => {
+const CreatePlayerFragment = ({setPlayer}: {setPlayer:Function}) => {
+    //Game Context 
+    const {
+        dominari,
+        privateKey,
+        gamestate,
+        connection
+    } = useContext(DominariContext);
+
+    // Refs
+    const nameref = useRef<HTMLInputElement>(null);
+    const imageref = useRef<HTMLInputElement>(null);
+
+    // Create Player Function
+    const createPlayer = async () => {
+        let player_id = randomU64();
+        let createPlayerIx = ixWasmToJs(dominari.init_player(
+            privateKey.publicKey.toString(),
+            gamestate.instance,
+            player_id,
+            nameref.current?.value!,
+            imageref.current?.value!
+        ));
+        let tx = new Transaction();
+        tx.add(createPlayerIx);
+        tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        tx.feePayer = privateKey.publicKey;
+        tx.sign(privateKey);
+        const sig = await connection.sendRawTransaction(tx.serialize(), {skipPreflight: true});
+        await connection.confirmTransaction(sig);
+        console.log("TX Confirmed: ", sig);
+
+        // TODO: Something here causes an error!
+        gamestate.update_instance_index();
+        gamestate.update_entity(player_id);
+        setPlayer(gamestate.get_player_info(privateKey.publicKey.toString()));
+    }
+
     return(
-        <div>
-            <label>Create Player</label>
+    <div className="flex gap-4">
+        <label>Name</label>
+        <input ref={nameref}></input>
+        <label>Image</label>
+        <input ref={imageref}></input>
+        <button onClick={createPlayer}>Join Game</button>
+    </div>
+    )
+}
+
+const AddTroopModal = ({setShowModal, cards}: {setShowModal:Function, cards:string[]}) => {
+    const [selectedUnit, setSelectedUnit] = useState("");
+    const getUnitCards = () => {
+        let componentArray:JSX.Element[] = []
+        for(let i=0; i<cards.length; i++){
+            componentArray.push(
+                <CardComponent 
+                    blueprintName={cards[i]} 
+                    key={randomU64().toString()}
+                    id={`${cards[i]}-${i}`}  // name-id
+                    setSelected={setSelectedUnit}
+                    selected={selectedUnit}    
+                ></CardComponent>
+            )
+        }
+        return componentArray;
+    }
+
+    return(
+        <>
+          <div
+            className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none"
+          >
+            <div className="relative w-auto my-6 mx-auto max-w-3xl">
+              {/*content*/}
+              <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-black outline-none focus:outline-none">
+                {/*header*/}
+                <div className="flex items-start justify-between p-5 border-b border-solid border-slate-200 rounded-t">
+                  <h3 className="text-3xl font-semibold">
+                    My Troops
+                  </h3>
+                  <button
+                    className="p-1 ml-auto bg-transparent border-0 text-black opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
+                    onClick={() => setShowModal(false)}
+                  >
+                    <span className="bg-transparent text-black opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">
+                      ×
+                    </span>
+                  </button>
+                </div>
+                {/*body*/}
+                <div className="relative p-6 grid grid-cols-2">
+                {getUnitCards()}
+                </div>
+                {/*footer*/}
+                <div className="flex items-center justify-end p-6 border-t border-solid border-slate-200 rounded-b">
+                  <button
+                    className="text-red-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Close
+                  </button>
+                  <button
+                    className="bg-emerald-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                    type="button"
+                    onClick={() => {
+                        console.log(`Spawning ${selectedUnit}`)
+                        
+                        setShowModal(false)
+                    }}
+                  >
+                    Spawn Unit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="opacity-25 fixed inset-0 z-40 bg-black"></div>
+        </>
+    )
+}
+
+const CardComponent = ({blueprintName, id, setSelected, selected}: {blueprintName:string, id:string, setSelected: Function, selected:string}) => {
+    const {
+        blueprints
+    } = useContext(DominariContext);
+
+    if(!blueprints[blueprintName]){
+        return(
+            <div>
+                <label>{blueprintName}</label>
+                <label>Blueprint not found locally!</label>
+            </div>
+        )
+    }
+
+    const unitOrMod:any = blueprints[blueprintName];
+    const imageSrc = unitOrMod.metadata.entity_type == "Unit" ? `assets/troops/${blueprintName}.png` : `assets/mods/${blueprintName}.png`
+    const [bgColor, setBgColor] = useState("black");
+
+    useEffect(() => {
+        if(selected == id) {
+            setBgColor("#ee6363");
+        }
+    }, [selected])
+
+    return (
+    <div onClick={() => {setSelected(id)}} style={{backgroundColor: bgColor}} className="w-[150]">
+        <label className="ml-4">{blueprintName}</label>
+        <div className="mx-4 my-2 flex gap-2">
+            <img src={imageSrc} className="border-2 border-white w-20 h-20"></img>
+            <div className="grid grid-cols-2">
+                <label>Health: {unitOrMod.health.health}</label>
+                <label>Class: {unitOrMod.troop_class.class}</label>
+                <label>Movement: {unitOrMod.range.movement}</label>
+                <label>Attack Range: {unitOrMod.range.attack_range}</label>
+                <label>Damage: {unitOrMod.damage.min_damage}-{unitOrMod.damage.max_damage}</label>
+                <label>Recovery: {unitOrMod.last_used.recovery}</label>
+                <label>Value: {unitOrMod.value.value}</label>
+            </div>
         </div>
+    </div>
     )
 }

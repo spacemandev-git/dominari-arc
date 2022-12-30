@@ -50,6 +50,9 @@ impl Dominari {
         let mut components: BTreeMap<Pubkey, SerializedComponent> = BTreeMap::new();
         let reference = component_index.get_relevant_component_keys();
 
+        // Ignoring blueprint.metadata cause it'll get overwritten anyway
+        // it's only used locally for front end
+
         if blueprint.mapmeta.is_some() {
             components.insert(reference.metadata, SerializedComponent { 
                 max_size: ComponentMapMeta::get_max_size(), 

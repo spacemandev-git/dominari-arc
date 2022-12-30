@@ -2,7 +2,7 @@ use std::{collections::HashMap, str::FromStr};
 use anchor_lang::prelude::*;
 use wasm_bindgen::{prelude::*, throw_str};
 use solana_client_wasm::WasmClient;
-use dominari::account::InstanceIndex;
+use dominari::account::{InstanceIndex, PlayPhase};
 use core_ds::account::Entity;
 use dominari::component::*;
 use crate::{component_schemas::ComponentIndex, coreds::{get_registry_instance, get_keys_from_id}, wasm_wrappers::{WasmTile, WasmFeature, WasmTroop, WasmPlayer}, blueprints::BlueprintIndex};
@@ -208,6 +208,16 @@ impl GameState{
                 cards: cardnames
             };
             return serde_wasm_bindgen::to_value(&player).unwrap();
+        }
+    }
+
+    pub fn get_play_phase(&self) -> JsValue {
+        match self.index.as_ref().unwrap().play_phase {
+            PlayPhase::Build => return serde_wasm_bindgen::to_value(&"build").unwrap(),
+            PlayPhase::Lobby => return serde_wasm_bindgen::to_value(&"lobby").unwrap(),
+            PlayPhase::Play => return serde_wasm_bindgen::to_value(&"play").unwrap(),
+            PlayPhase::Paused => return serde_wasm_bindgen::to_value(&"paused").unwrap(),
+            PlayPhase::Finished => return serde_wasm_bindgen::to_value(&"finished").unwrap(),
         }
     }
 }

@@ -36,20 +36,30 @@ export interface WasmTile {
 }
 
 interface WasmFeature {
-    name: String,
-    id: String
+    name: string,
+    id: string
 }
 
 interface WasmTroop {
-    name: String,
-    id: String
+    name: string,
+    id: string
 }
 
 //dominari-sdk::wasm_wrappers::WasmPlayer
 export interface WasmPlayer {
-    name: String,
-    image: String,
-    score: String,
-    kills: String,
-    cards: String[]
+    name: string,
+    image: string,
+    score: string,
+    kills: string,
+    cards: string[]
+}
+
+
+export enum NavEnum {
+    Settings,
+    Map
+}
+
+export interface Blueprints {
+    [key: string]: any
 }

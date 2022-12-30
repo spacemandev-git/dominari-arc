@@ -4,11 +4,11 @@ use wasm_bindgen::prelude::*;
 use anchor_lang::prelude::*;
 use serde::Deserialize;
 
-use crate::wasm_wrappers::ComponentDropTableWASM;
+use crate::wasm_wrappers::{ComponentDropTableWASM, ComponentMetadataWASM};
 
 #[derive(Deserialize, Debug)]
 pub struct BlueprintConfig {
-    pub metadata: Option<dominari::component::ComponentMetadata>, // Uses Pubkey
+    pub metadata: Option<ComponentMetadataWASM>, // Uses Pubkey
     pub mapmeta: Option<dominari::component::ComponentMapMeta>,
     pub location: Option<dominari::component::ComponentLocation>,
     pub feature: Option<dominari::component::ComponentFeature>,

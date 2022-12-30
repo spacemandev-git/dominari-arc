@@ -1,3 +1,7 @@
+[metadata]
+name = "Scout"
+entity_type = "Unit"
+
 [offchain_metadata]
 link = "scout.png"
 

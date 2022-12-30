@@ -1,0 +1,9 @@
+[metadata]
+name = "Bandages"
+entity_type = "Mod"
+
+[health]
+health = 4
+
+[troop_class]
+class = "Infantry"

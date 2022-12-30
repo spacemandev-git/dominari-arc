@@ -46,3 +46,9 @@ pub struct WasmPlayer {
 pub struct ComponentDropTableWASM {
     pub drop_table: Vec<String>
 }
+
+#[derive(Deserialize, Debug)]
+pub struct ComponentMetadataWASM {
+    pub name: String,
+    pub entity_type: String,
+}
