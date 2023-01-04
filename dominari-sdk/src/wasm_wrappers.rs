@@ -17,7 +17,7 @@ pub struct WasmTile {
     pub x: u8,
     pub y: u8,
     pub feature: Option<WasmFeature>,
-    pub troop: Option<WasmTroop>
+    pub troop: Option<WasmTroop>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -29,11 +29,13 @@ pub struct WasmFeature {
 #[derive(Serialize, Deserialize)]
 pub struct WasmTroop {
     pub name: String,
-    pub id: String
+    pub id: String,
+    pub troop_owner_player_id: String //u64 as string,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct WasmPlayer {
+    pub id: String,
     pub name: String,
     pub image: String,
     pub score: String, //u64 as String

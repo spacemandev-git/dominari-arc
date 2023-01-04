@@ -42,11 +42,13 @@ interface WasmFeature {
 
 interface WasmTroop {
     name: string,
-    id: string
+    id: string,
+    troop_owner_player_id: string,
 }
 
 //dominari-sdk::wasm_wrappers::WasmPlayer
 export interface WasmPlayer {
+    id: string,
     name: string,
     image: string,
     score: string,
@@ -63,3 +65,5 @@ export enum NavEnum {
 export interface Blueprints {
     [key: string]: any
 }
+
+export type PlayPauseState = "Lobby" | "Build" | "Play" | "Paused" | "Finished";

@@ -12,6 +12,7 @@
   "dependencies": {
     "@next/font": "13.0.7",
     "@project-serum/anchor": "^0.26.0",
+    "@solana/buffer-layout": "^4.0.1",
     "@solana/wallet-adapter-base": "^0.9.20",
     "@solana/wallet-adapter-react": "^0.15.26",
     "@solana/wallet-adapter-react-ui": "^0.9.25",
@@ -25,6 +26,7 @@
     "dominari-sdk": "../dominari-sdk/pkg",
     "eslint": "8.30.0",
     "eslint-config-next": "13.0.7",
+    "js-sha256": "^0.9.0",
     "next": "13.0.7",
     "pixi-viewport": "^4.38.0",
     "pixi.js": "^7.0.5",
@@ -34,6 +36,7 @@
     "react-icons": "^4.7.1",
     "react-no-ssr": "^1.1.0",
     "react-pixi-fiber": "^1.0.4",
+    "rxjs": "^7.8.0",
     "tailwindcss": "^3.2.4",
     "toml": "^3.0.0",
     "typescript": "4.9.4",

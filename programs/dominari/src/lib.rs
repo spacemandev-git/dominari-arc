@@ -377,7 +377,13 @@ pub mod dominari {
             return err!(DominariError::InvalidPlayer)
         }
 
-        ctx.accounts.instance_index.play_phase = game_state;
+        ctx.accounts.instance_index.play_phase = game_state.clone();
+
+        emit!(GameStateChanged {
+            instance: ctx.accounts.registry_instance.instance,
+            player: ctx.accounts.player.entity_id,
+            new_state: game_state
+        });
         Ok(())
     }
 

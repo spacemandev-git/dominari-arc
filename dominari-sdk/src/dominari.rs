@@ -5,14 +5,14 @@ use dominari::{component::*, constant::{SEEDS_BLUEPRINT, SEEDS_INSTANCEINDEX}, s
 use wasm_bindgen::prelude::*;
 use std::{str::FromStr, collections::BTreeMap};
 use anchor_lang::system_program::ID as system_program;
-
+use crate::coreds::get_keys_from_id;
 use crate::wasm_wrappers::GameConfigFile;
 use crate::{component_schemas::ComponentIndex, blueprints::BlueprintConfig};
 
 #[wasm_bindgen]
 #[derive(Default)]
 pub struct Dominari {
-    pub program_id: Pubkey
+    pub program_id: Pubkey,
 }
 
 #[wasm_bindgen]
@@ -457,6 +457,132 @@ impl Dominari {
                 entity_id,
                 name,
                 image,
+            }.data()
+        };
+
+        serde_wasm_bindgen::to_value(&ix).unwrap()
+    }
+
+    pub fn spawn_unit(&self, payer:&str, instance:u64, player_id: u64, unit_id:u64, tile_id:u64, blueprint: &str) -> JsValue {
+        let payer = Pubkey::from_str(payer).unwrap();
+        let config = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER
+        ], &self.program_id).0;
+        
+        let registry_instance = Pubkey::find_program_address(&[
+            core_ds::constant::SEEDS_REGISTRYINSTANCE_PREFIX,
+            registry::id().to_bytes().as_ref(),
+            instance.to_be_bytes().as_ref()
+        ], &core_ds::id()).0;
+
+        let instance_index = Pubkey::find_program_address(&[
+            SEEDS_INSTANCEINDEX,
+            registry_instance.to_bytes().as_ref(),
+        ], &self.program_id).0;
+
+        let registry_config = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_REGISTRYSIGNER,
+        ], &registry::id()).0;
+
+        let ab_signer = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER,
+        ], &self.program_id).0;
+
+        let ab_registration = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
+            ab_signer.to_bytes().as_ref()
+        ], &registry::id()).0;
+
+        let unit_blueprint = Pubkey::from_str(self.get_blueprint_key(blueprint).as_str()).unwrap();
+
+        let player = get_keys_from_id(registry_instance, vec![player_id])[0];
+
+        let tile = get_keys_from_id(registry_instance, vec![tile_id])[0];
+
+        let unit = get_keys_from_id(registry_instance, vec![unit_id])[0];
+
+        let ix = Instruction {
+            program_id: self.program_id,
+            accounts: dominari::accounts::SpawnUnit {
+                payer,
+                system_program,
+                config,
+                instance_index,
+                registry_config,
+                ab_registration,
+                registry_program: registry::id(),
+                coreds: core_ds::id(),
+                registry_instance,
+                unit_blueprint,
+                player,
+                tile,
+                unit,
+            }.to_account_metas(Some(true)),
+            data: dominari::instruction::SpawnUnit {
+                unit_id,
+            }.data()
+        };
+        serde_wasm_bindgen::to_value(&ix).unwrap()
+    }
+
+    pub fn change_game_state(&self, payer:&str, instance:u64, player_id:u64, game_state_str:String) -> JsValue {
+        let payer = Pubkey::from_str(payer).unwrap();
+        let config = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER
+        ], &self.program_id).0;
+        
+        let registry_instance = Pubkey::find_program_address(&[
+            core_ds::constant::SEEDS_REGISTRYINSTANCE_PREFIX,
+            registry::id().to_bytes().as_ref(),
+            instance.to_be_bytes().as_ref()
+        ], &core_ds::id()).0;
+
+        let instance_index = Pubkey::find_program_address(&[
+            SEEDS_INSTANCEINDEX,
+            registry_instance.to_bytes().as_ref(),
+        ], &self.program_id).0;
+
+        let registry_config = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_REGISTRYSIGNER,
+        ], &registry::id()).0;
+
+        let ab_signer = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER,
+        ], &self.program_id).0;
+
+        let ab_registration = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
+            ab_signer.to_bytes().as_ref()
+        ], &registry::id()).0;
+
+        let player = get_keys_from_id(registry_instance, vec![player_id])[0];
+
+        let mut game_state: dominari::account::PlayPhase = dominari::account::PlayPhase::Paused;
+        
+        match game_state_str.as_str() {
+            "Lobby" => game_state = dominari::account::PlayPhase::Lobby,
+            "Build" => game_state = dominari::account::PlayPhase::Build,
+            "Play" => game_state = dominari::account::PlayPhase::Play,
+            "Paused" => game_state = dominari::account::PlayPhase::Paused,
+            "Finished" => game_state = dominari::account::PlayPhase::Finished,
+            &_=> {}
+        }
+
+        let ix = Instruction {
+            program_id: self.program_id,
+            accounts: dominari::accounts::ChangeGameState {
+                payer,
+                config,
+                instance_index,
+                registry_config,
+                ab_registration,
+                registry_program: registry::id(),
+                coreds: core_ds::id(),
+                registry_instance,
+                player,
+            }.to_account_metas(Some(true)),
+            data: dominari::instruction::ChangeGameState {
+                game_state
             }.data()
         };
 

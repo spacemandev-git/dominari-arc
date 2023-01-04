@@ -128,64 +128,21 @@ impl GameState{
         throw_str("Tile Not Found!");
     }
 
+    pub  fn get_wasm_tile(&self, tile_id:u64) -> JsValue {
+        return serde_wasm_bindgen::to_value(&self.get_tile_info(tile_id)).unwrap()
+    }
+
     pub fn get_map(&self) -> JsValue {
         if self.index.is_none() {
             throw_str("Load state first!")
         }
-        let map_id = self.index.as_ref().unwrap().map;
-        let mapmeta = self.get_entity_mapmeta(&map_id).unwrap();
+        let mut tiles: Vec<WasmTile> = vec![];
 
-        let mut map: Vec<Vec<WasmTile>> = vec![];
-
-        for x in 0..mapmeta.max_x {
-            let mut row: Vec<WasmTile> = vec![];
-            for y in 0..mapmeta.max_y {
-                let tile = WasmTile {
-                    x,
-                    y,
-                    feature: None,
-                    troop: None,
-                };
-                // We don't add Feture and Troop info here because we'd have to multi search each tile 
-                // Instead, we iterate through the index's tiles, only needing to deserialize each tile's components once                
-                row.push(tile)
-            }
-            map.push(row);
-        }
-        
-        
-        //Add Feature Information
-        //Add Troop Information
-        
         for tile_id in self.index.as_ref().unwrap().tiles.iter() {
-            // All tiles have these three components
-            let location = self.get_entity_location(tile_id).unwrap();
-            let feature = self.get_entity_feature(tile_id).unwrap().feature_id;
-            let troop = self.get_entity_occupant(tile_id).unwrap().occupant_id;
-
-            let mut tile = map.get_mut(location.x as usize).unwrap().get_mut(location.y as usize).unwrap();
-            
-            if feature.is_some() {
-                let f_id = feature.unwrap();
-                let feature_metadata = self.get_entity_metadata(&f_id).unwrap();
-                tile.feature = Some(WasmFeature {
-                    name: feature_metadata.name,
-                    id: f_id.to_string()
-                })
-            }
-
-            if troop.is_some() {
-                let t_id = troop.unwrap();
-                let troop_metadata = self.get_entity_metadata(&t_id).unwrap();
-
-                tile.troop = Some(WasmTroop {
-                    name: troop_metadata.name,
-                    id: t_id.to_string()
-                })
-            }
+            tiles.push(self.get_tile_info(*tile_id));
         }
-        
-        serde_wasm_bindgen::to_value(&map).unwrap()
+
+        serde_wasm_bindgen::to_value(&tiles).unwrap()
     }
 
     /**
@@ -201,6 +158,7 @@ impl GameState{
             let stats = self.get_entity_player_stats(&player_id.unwrap()).unwrap();
             let cardnames = stats.cards.iter().map(|&cardkey| {return self.blueprint_index.get_blueprint_name(cardkey.to_string())}).collect(); 
             let player = WasmPlayer {
+                id: player_id.unwrap().to_string(),
                 name: stats.name,
                 image: stats.image,
                 score: stats.score.to_string(),
@@ -227,6 +185,42 @@ impl GameState{
  */
 impl GameState {
     
+    pub fn get_tile_info(&self, tile_id:u64) -> WasmTile {
+        // All tiles have these four components
+        let location = self.get_entity_location(&tile_id).unwrap();
+        let feature = self.get_entity_feature(&tile_id).unwrap().feature_id;
+        let troop = self.get_entity_occupant(&tile_id).unwrap().occupant_id;
+
+        let mut tile = WasmTile {
+            x: location.x,
+            y: location.y,
+            feature: None,
+            troop: None,
+        };
+
+        if feature.is_some() {
+            let f_id = feature.unwrap();
+            let feature_metadata = self.get_entity_metadata(&f_id).unwrap();
+            tile.feature = Some(WasmFeature {
+                name: feature_metadata.name,
+                id: f_id.to_string()
+            })
+        }
+
+        if troop.is_some() {
+            let t_id = troop.unwrap();
+            let troop_metadata = self.get_entity_metadata(&t_id).unwrap();
+            let troop_player = self.get_entity_owner(&t_id).unwrap().player.unwrap();
+
+            tile.troop = Some(WasmTroop {
+                name: troop_metadata.name,
+                id: t_id.to_string(),
+                troop_owner_player_id: troop_player.to_string()
+            })
+        }
+        tile
+    }
+
     pub fn get_player(&self, player: Pubkey) -> Option<u64> {
         if self.index.is_none() {
             return None;
