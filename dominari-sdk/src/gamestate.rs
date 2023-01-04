@@ -210,12 +210,13 @@ impl GameState {
         if troop.is_some() {
             let t_id = troop.unwrap();
             let troop_metadata = self.get_entity_metadata(&t_id).unwrap();
-            let troop_player = self.get_entity_owner(&t_id).unwrap().player.unwrap();
+            let troop_player = self.get_entity_owner(&t_id).unwrap();
 
             tile.troop = Some(WasmTroop {
                 name: troop_metadata.name,
                 id: t_id.to_string(),
-                troop_owner_player_id: troop_player.to_string()
+                troop_owner_player_id: troop_player.player.unwrap().to_string(),
+                troop_owner_player_key: troop_player.owner.unwrap().to_string(),
             })
         }
         tile

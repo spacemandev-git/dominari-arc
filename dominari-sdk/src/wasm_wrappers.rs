@@ -30,7 +30,8 @@ pub struct WasmFeature {
 pub struct WasmTroop {
     pub name: String,
     pub id: String,
-    pub troop_owner_player_id: String //u64 as string,
+    pub troop_owner_player_id: String, //u64 as string,
+    pub troop_owner_player_key: String
 }
 
 #[derive(Serialize, Deserialize)]

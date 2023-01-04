@@ -510,6 +510,7 @@ const MapPage = () => {
                         await gamestate.update_entity(BigInt(event.data.unit));
                         // Update Entity Player (reduce cards)
                         await  gamestate.update_entity(BigInt(event.data.player));
+                        setPlayer(gamestate.get_player_info(privateKey.publicKey.toString()));
                         // Update instance index
                         await gamestate.update_instance_index();
                         renderTile(gamestate.get_wasm_tile(BigInt(event.data.tile)));
@@ -614,7 +615,6 @@ const MapPage = () => {
     // Functions
     const renderMap = () => {
         let grid: WasmTile[] = gamestate.get_map();
-
         for(let tile of grid){
             renderTile(tile);
         }
@@ -626,7 +626,7 @@ const MapPage = () => {
                 {player?.name && <PlayerFragment {...{player}}></PlayerFragment>}
                 {!player?.name && <CreatePlayerFragment {...{setPlayer}}></CreatePlayerFragment>}
             </div>
-            {showAddTroopModal && <AddTroopModal {...{setShowModal: setTroopModal, cards: player.cards, selectedTile: selectedTile}}></AddTroopModal>}
+            {showAddTroopModal && <AddTroopModal {...{setShowModal: setTroopModal, player: player, selectedTile: selectedTile}}></AddTroopModal>}
             <Stage options={{height: 125*8 +5, width: 125*8 +5, backgroundColor: 0xFFFFFF}} ref={stageRef}>
                 <Container ref={containerRef}></Container>
             </Stage>
@@ -721,7 +721,7 @@ const CreatePlayerFragment = ({setPlayer}: {setPlayer:Function}) => {
     )
 }
 
-const AddTroopModal = ({setShowModal, cards, selectedTile}: {setShowModal:Function, cards:string[], selectedTile: string}) => {
+const AddTroopModal = ({setShowModal, player, selectedTile}: {setShowModal:Function, player:WasmPlayer, selectedTile: string}) => {
     // Context
     const {
         connection,
@@ -729,7 +729,7 @@ const AddTroopModal = ({setShowModal, cards, selectedTile}: {setShowModal:Functi
         privateKey,
         gamestate
     } = useContext(DominariContext);
-
+    let cards = player.cards;
 
     const [selectedUnit, setSelectedUnit] = useState("");
     const getUnitCards = () => {
