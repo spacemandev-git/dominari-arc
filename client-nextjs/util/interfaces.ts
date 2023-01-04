@@ -44,6 +44,7 @@ interface WasmTroop {
     name: string,
     id: string,
     troop_owner_player_id: string,
+    troop_owner_player_key: string,
 }
 
 //dominari-sdk::wasm_wrappers::WasmPlayer

@@ -2,8 +2,8 @@ import { NextPage } from "next"
 import { FaGamepad, FaWrench } from 'react-icons/fa';
 import { createContext, useRef, useState, useEffect, useContext } from "react";
 import { Dominari, GameState } from "dominari-sdk";
-import { DOMINARI_PROGRAM_ID, LOCAL_STORAGE_GAMEINSTANCES, LOCAL_STORAGE_PRIVATEKEY, REGISTRY_PROGRAM_ID } from "../util/constants";
-import { ComputeBudgetInstruction, ComputeBudgetProgram, Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { COLORS, DOMINARI_PROGRAM_ID, LOCAL_STORAGE_GAMEINSTANCES, LOCAL_STORAGE_PRIVATEKEY, REGISTRY_PROGRAM_ID } from "../util/constants";
+import { ComputeBudgetProgram, Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { useLocalStorage } from "usehooks-ts";
 import {encode, decode} from 'bs58';
 import toml from 'toml';
@@ -24,6 +24,7 @@ import { Event, EventData } from "@project-serum/anchor";
 //@ts-ignore
 import NoSSR from 'react-no-ssr';
 import { ConfigFileInterface } from "../util/interfaces";
+import { OutlineFilter } from "pixi-filters";
 
 export const DominariContext = createContext({} as DominariContextInterface);
 export interface DominariContextInterface {
@@ -537,8 +538,8 @@ const MapPage = () => {
 
     // Constants
     const TILE_SIZE = 125;
-    const UNSLECTED_TILE_COLOR = 0x000000;
-    const SELECTED_TILE_COLOR = 0xee6363;
+    const UNSLECTED_TILE_COLOR = COLORS.BLACK;
+    const SELECTED_TILE_COLOR = COLORS.WHITE;
 
     const renderTile = (tile: WasmTile) => {
         let box = new PIXI.Graphics();
@@ -569,7 +570,7 @@ const MapPage = () => {
             featureSprite.anchor.y = 0;
             featureSprite.width = 50;
             featureSprite.height = 50;
-            featureSprite.position.x = 80 + (TILE_SIZE * tile.x);
+            featureSprite.position.x = 70 + (TILE_SIZE * tile.x);
             featureSprite.position.y = 10 + (TILE_SIZE * tile.y);
             containerRef.current?.addChild!(featureSprite);
         }
@@ -609,6 +610,11 @@ const MapPage = () => {
         troopSprite.height = 50;
         troopSprite.position.x = 10 + (TILE_SIZE * tile.x);
         troopSprite.position.y = 70 + (TILE_SIZE * tile.y);
+
+        if(tile.troop?.troop_owner_player_key == privateKey.publicKey.toString()) {
+            troopSprite.tint = COLORS.GREEN;
+        }        
+        
         containerRef.current?.addChild!(troopSprite);
     }
 
