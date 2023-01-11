@@ -1,3 +1,4 @@
+use dominari::component::TroopClass;
 use serde::{Serialize, Deserialize};
 
 /**
@@ -28,10 +29,31 @@ pub struct WasmFeature {
 
 #[derive(Serialize, Deserialize)]
 pub struct WasmTroop {
+    // Metadata
     pub name: String,
     pub id: String,
+    // Owner
     pub troop_owner_player_id: String, //u64 as string,
-    pub troop_owner_player_key: String
+    pub troop_owner_player_key: String,
+    // Damage
+    pub min_damage: String, //u64
+    pub max_damge: String, //u64
+    pub bonus_infantry: String, //u32
+    pub bonus_armor: String, //u32
+    pub bonus_aircraft: String, //u32
+    pub bonus_feature: String, //u32
+    // Health 
+    pub health: String, //u64
+    // Troop Class
+    pub class: TroopClass, // Enum
+    // Range
+    pub movement: u8,
+    pub attack_range: u8,
+    // Last Used
+    pub last_used: String, //u64
+    pub recovery: String, //u64
+    // Value
+    pub value: String, //u64
 }
 
 #[derive(Serialize, Deserialize)]

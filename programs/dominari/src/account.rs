@@ -41,6 +41,7 @@ impl MaxSize for Blueprint {
 #[derive(Debug)]
 #[account]
 pub struct InstanceIndex {
+    pub authority: Pubkey,
     pub config: GameConfig,
     pub map: u64,
     pub tiles: Vec<u64>,
@@ -67,6 +68,6 @@ pub enum PlayPhase {
  */
 impl MaxSize for InstanceIndex {
     fn get_max_size() -> u64 {
-        return 8+4+4+4+4+2;
+        return 32+8+4+4+4+4+2;
     }
 }

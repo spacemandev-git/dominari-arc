@@ -17,7 +17,8 @@ console_error_panic_hook = "0.1.7"
 web-sys = "0.3.60"
 toml = "0.5.9"
 serde = { version="1.0.147", features=["derive"]}
-core_ds = { path="../../../sol-arc/programs/core-ds", features=["no-entrypoint", "sdk"]}
+#core_ds = { path="../../../../sol-arc/programs/core-ds", features=["cpi"] }
+core_ds = { git="https://github.com/JumpCrypto/sol-arc", features=["cpi"] }
 registry = { path="../programs/registry", features=["no-entrypoint"]}
 dominari = { path="../programs/dominari", features=["no-entrypoint", "sdk"]}
 bimap = {version="0.6.2", features=["serde"]}

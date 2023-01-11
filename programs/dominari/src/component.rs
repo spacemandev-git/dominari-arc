@@ -154,13 +154,13 @@ impl MaxSize for ComponentFeatureRank {
 #[cfg_attr(feature = "sdk", derive(serde::Serialize, serde::Deserialize))]
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone)]
 pub struct ComponentRange{
-    pub movement: u64,
-    pub attack_range: u64,
+    pub movement: u8,
+    pub attack_range: u8,
 }
 
 impl MaxSize for ComponentRange {
     fn get_max_size() -> u64 {
-        return 8+8
+        return 1+1
     }
 }
 

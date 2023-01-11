@@ -1,5 +1,9 @@
 {
     "Healer": {
+        "metadata": {
+            "name": "Healer",
+            "entity_type": "Feature"
+        },
         "healing_power": {
             "heals": 10
         },
@@ -27,13 +31,59 @@
             "per_rank_stat_increase": 10
         }
     },
+    "Bandages": {
+        "metadata": {
+            "name": "Bandages",
+            "entity_type": "Mod"
+        },
+        "health": {
+            "health": 4
+        },
+        "troop_class": {
+            "class": "Infantry"
+        }
+    },
+    "Raiders": {
+        "metadata": {
+            "name": "Raiders",
+            "entity_type": "Unit"
+        },
+        "offchain_metadata": {
+            "link": "Raiders.png"
+        },
+        "damage": {
+            "min_damage": 4,
+            "max_damage": 12,
+            "bonus_infantry": 0,
+            "bonus_armor": 0,
+            "bonus_aircraft": 1,
+            "bonus_feature": 0
+        },
+        "health": {
+            "health": 35
+        },
+        "troop_class": {
+            "class": "Armor"
+        },
+        "range": {
+            "movement": 3,
+            "attack_range": 3
+        },
+        "last_used": {
+            "last_used": 0,
+            "recovery": 4
+        },
+        "value": {
+            "value": 35
+        }
+    },
     "Scout": {
         "metadata": {
             "name": "Scout",
             "entity_type": "Unit"
         },
         "offchain_metadata": {
-            "link": "scout.png"
+            "link": "Scout.png"
         },
         "damage": {
             "min_damage": 1,
@@ -55,10 +105,10 @@
         },
         "last_used": {
             "last_used": 0,
-            "recovery": 4
+            "recovery": 10
         },
         "value": {
-            "value": 1
+            "value": 10
         }
     }
 }

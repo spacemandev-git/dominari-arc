@@ -525,6 +525,63 @@ impl Dominari {
         serde_wasm_bindgen::to_value(&ix).unwrap()
     }
 
+    pub fn move_unit(&self, payer:&str, instance:u64, unit_id:u64, from_tile_id:u64, to_tile_id:u64) -> JsValue {
+        let payer = Pubkey::from_str(payer).unwrap();
+        let config = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER
+        ], &self.program_id).0;
+        
+        let registry_instance = Pubkey::find_program_address(&[
+            core_ds::constant::SEEDS_REGISTRYINSTANCE_PREFIX,
+            registry::id().to_bytes().as_ref(),
+            instance.to_be_bytes().as_ref()
+        ], &core_ds::id()).0;
+
+        let instance_index = Pubkey::find_program_address(&[
+            SEEDS_INSTANCEINDEX,
+            registry_instance.to_bytes().as_ref(),
+        ], &self.program_id).0;
+
+        let registry_config = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_REGISTRYSIGNER,
+        ], &registry::id()).0;
+
+        let ab_signer = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER,
+        ], &self.program_id).0;
+
+        let ab_registration = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
+            ab_signer.to_bytes().as_ref()
+        ], &registry::id()).0;
+
+        let unit = get_keys_from_id(registry_instance, vec![unit_id])[0];
+        let from = get_keys_from_id(registry_instance, vec![from_tile_id])[0];
+        let to = get_keys_from_id(registry_instance, vec![to_tile_id])[0];
+
+
+        let ix = Instruction {
+            program_id: self.program_id,
+            accounts: dominari::accounts::MoveUnit {
+                payer,
+                system_program,
+                config,
+                instance_index,
+                registry_config,
+                ab_registration,
+                registry_program: registry::id(),
+                coreds: core_ds::id(),
+                registry_instance,
+                unit,
+                from,
+                to
+            }.to_account_metas(Some(true)),
+            data: dominari::instruction::MoveUnit {
+            }.data()
+        };
+        serde_wasm_bindgen::to_value(&ix).unwrap()
+    }
+    
     pub fn change_game_state(&self, payer:&str, instance:u64, player_id:u64, game_state_str:String) -> JsValue {
         let payer = Pubkey::from_str(payer).unwrap();
         let config = Pubkey::find_program_address(&[

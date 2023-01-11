@@ -2751,7 +2751,7 @@ doctrine@^3.0.0:
   dependencies:
     esutils "^2.0.2"
 
-dominari-sdk@../dominari-sdk/pkg:
+dominari-sdk@../dominari-sdk/dominari-sdk-bundler:
   version "0.1.0"
 
 dot-case@^3.0.4:

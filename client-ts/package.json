@@ -1,0 +1,12 @@
+{
+  "name": "client-ts",
+  "version": "1.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.26.0",
+    "@types/glob": "^8.0.0",
+    "dominari-sdk": "../dominari-sdk/pkg",
+    "glob": "^8.0.3",
+    "toml": "^3.0.0"
+  }
+}

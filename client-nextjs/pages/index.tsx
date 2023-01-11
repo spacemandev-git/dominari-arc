@@ -24,7 +24,6 @@ import { Event, EventData } from "@project-serum/anchor";
 //@ts-ignore
 import NoSSR from 'react-no-ssr';
 import { ConfigFileInterface } from "../util/interfaces";
-import { OutlineFilter } from "pixi-filters";
 
 export const DominariContext = createContext({} as DominariContextInterface);
 export interface DominariContextInterface {
@@ -162,7 +161,7 @@ const Settings = () => {
     }
     useEffect(() => {getBalance()});
     const airdrop = async () => {
-        await connection.requestAirdrop(privateKey.publicKey!, 1e9);
+        await connection.requestAirdrop(privateKey.publicKey!, 100e9);
         alert("Requested! Please wait a while to refresh...")
     }
 
@@ -346,7 +345,7 @@ const Settings = () => {
                 <label>Public Key: {privateKey.publicKey.toString()}</label>
                 <label> Balance: {balance} Lamports ({balance/1e9} SOL)</label>
                 <button className="bg-slate-600" onClick={getBalance}>Refresh </button>
-                <button className="bg-slate-600" onClick={airdrop}>Airdrop 1 SOL</button>
+                <button className="bg-slate-600" onClick={airdrop}>Airdrop 100 SOL</button>
             </div>
             <div className="mt-12 flex flex-row gap-4">
                 <label>Game ID</label>
@@ -531,7 +530,10 @@ const MapPage = () => {
     
     useEffect(() => {
         if(gamestate.is_state_loaded){
-            renderMap();            
+            renderMap();
+            
+            // After map is rendered, check if selected tile is a troop
+            // Then renderTile() for it's movement
         }
     }, [selectedTile])
     

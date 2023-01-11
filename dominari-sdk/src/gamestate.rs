@@ -169,13 +169,13 @@ impl GameState{
         }
     }
 
-    pub fn get_play_phase(&self) -> JsValue {
+    pub fn get_play_phase(&self) -> String {
         match self.index.as_ref().unwrap().play_phase {
-            PlayPhase::Build => return serde_wasm_bindgen::to_value(&"build").unwrap(),
-            PlayPhase::Lobby => return serde_wasm_bindgen::to_value(&"lobby").unwrap(),
-            PlayPhase::Play => return serde_wasm_bindgen::to_value(&"play").unwrap(),
-            PlayPhase::Paused => return serde_wasm_bindgen::to_value(&"paused").unwrap(),
-            PlayPhase::Finished => return serde_wasm_bindgen::to_value(&"finished").unwrap(),
+            PlayPhase::Build => return String::from("Build"),
+            PlayPhase::Lobby => return String::from("Lobby"),
+            PlayPhase::Play => return String::from("Play"),
+            PlayPhase::Paused => return String::from("Paused"),
+            PlayPhase::Finished => return String::from("Finished"),
         }
     }
 }
@@ -211,12 +211,32 @@ impl GameState {
             let t_id = troop.unwrap();
             let troop_metadata = self.get_entity_metadata(&t_id).unwrap();
             let troop_player = self.get_entity_owner(&t_id).unwrap();
+            let damage = self.get_entity_damage(&t_id).unwrap();
+            let health = self.get_entity_health(&t_id).unwrap();
+            let class = self.get_entity_troop_class(&t_id).unwrap();
+            let range = self.get_entity_range(&t_id).unwrap();
+            let last_used = self.get_entity_last_used(&t_id).unwrap();
+            let value = self.get_entity_value(&t_id).unwrap();
+
 
             tile.troop = Some(WasmTroop {
                 name: troop_metadata.name,
                 id: t_id.to_string(),
                 troop_owner_player_id: troop_player.player.unwrap().to_string(),
                 troop_owner_player_key: troop_player.owner.unwrap().to_string(),
+                min_damage: damage.min_damage.to_string(),
+                max_damge: damage.max_damage.to_string(),
+                bonus_infantry: damage.bonus_infantry.to_string(),
+                bonus_armor: damage.bonus_armor.to_string(),
+                bonus_aircraft: damage.bonus_aircraft.to_string(),
+                bonus_feature: damage.bonus_feature.to_string(),
+                health: health.health.to_string(),
+                class: class.class,
+                movement: range.movement,
+                attack_range: range.attack_range,
+                last_used: last_used.last_used.to_string(),
+                recovery: last_used.recovery.to_string(),
+                value: value.value.to_string()
             })
         }
         tile

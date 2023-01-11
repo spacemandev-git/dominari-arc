@@ -3,7 +3,7 @@ name = "Scout"
 entity_type = "Unit"
 
 [offchain_metadata]
-link = "scout.png"
+link = "Scout.png"
 
 [damage]
 min_damage = 1
@@ -25,7 +25,7 @@ attack_range = 1
 
 [last_used]
 last_used = 0
-recovery = 4
+recovery = 10
 
 [value]
-value = 1
+value = 10

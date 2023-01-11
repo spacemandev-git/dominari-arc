@@ -1,31 +1,31 @@
 [metadata]
-name = "Scout"
+name = "Raiders"
 entity_type = "Unit"
 
 [offchain_metadata]
-link = "scout.png"
+link = "Raiders.png"
 
 [damage]
-min_damage = 1
-max_damage = 10
+min_damage = 4
+max_damage = 12
 bonus_infantry = 0 
 bonus_armor = 0 
-bonus_aircraft = 0
+bonus_aircraft = 1
 bonus_feature = 0
 
 [health]
-health = 10
+health = 35
 
 [troop_class]
-class = "Infantry"
+class = "Armor"
 
 [range]
-movement = 1
-attack_range = 1
+movement = 3
+attack_range = 3
 
 [last_used]
 last_used = 0
 recovery = 4
 
 [value]
-value = 1
+value = 35

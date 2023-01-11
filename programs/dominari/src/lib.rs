@@ -298,6 +298,7 @@ pub mod dominari {
         registry::cpi::instance_registry(instance_ctx, instance)?;
         // Set up Instance Index
         ctx.accounts.instance_index.config = game_config; 
+        ctx.accounts.instance_index.authority = ctx.accounts.payer.key();
         Ok(())
     }
 
@@ -574,7 +575,7 @@ pub mod dominari {
         let distance:f64 = (((to_location.x as f64 - from_location.x as f64).powf(2_f64) + (to_location.y as f64 - from_location.y as f64).powf(2_f64)) as f64).sqrt();
         let unit_range_component = ctx.accounts.unit.components.get(&reference.range).unwrap();
         let unit_range = ComponentRange::try_from_slice(&unit_range_component.data.as_slice()).unwrap();
-        if unit_range.movement < distance as u64 {
+        if unit_range.movement < distance as u8 {
             return err!(ComponentErrors::UnitLacksMovement)
         }
 
@@ -700,7 +701,7 @@ pub mod dominari {
         let distance:f64 = (((defender_location.x as f64 - attacker_location.x as f64).powf(2_f64) + (defender_location.y as f64 - attacker_location.y as f64 ).powf(2_f64)) as f64).sqrt();
         let attacker_range_c = attacker.components.get(&reference.range).unwrap();
         let attacker_range = ComponentRange::try_from_slice(&attacker_range_c.data.as_slice()).unwrap();
-        if distance as u64 > attacker_range.attack_range {
+        if distance as u8 > attacker_range.attack_range {
             return err!(ComponentErrors::OutOfRange)
         }
 
@@ -843,7 +844,12 @@ pub mod dominari {
 
     // Pass in multiple entities through remaining accounts; will iterate and remove them if they are marked inactive
     //pub fn reclaim_entity_sol(ctx:Context<ReclaimSol>) -> Result<()> {}
-
+    pub fn reclaim_sol(ctx:Context<ReclaimSol>) -> Result<()> {
+        // Can Close *Instance Index* if it's Empty
+        // Can Close Map, Tiles, Features if Leader
+        // Can Close Troops if Troop Owner
+        Ok(())
+    }
 }
 
 pub fn get_random_u64(max: u64) -> u64 {

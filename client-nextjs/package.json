@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build:blueprints": "node scripts/blueprint.mjs",
-    "dev": "npm run build:blueprints && next dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -23,7 +22,7 @@
     "@types/react-dom": "18.0.9",
     "autoprefixer": "^10.4.13",
     "bs58": "^5.0.0",
-    "dominari-sdk": "../dominari-sdk/pkg",
+    "dominari-sdk": "../dominari-sdk/dominari-sdk-bundler",
     "eslint": "8.30.0",
     "eslint-config-next": "13.0.7",
     "js-sha256": "^0.9.0",

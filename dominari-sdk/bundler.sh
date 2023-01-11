@@ -1,0 +1,1 @@
+wasm-pack build --target bundler --out-dir ./dominari-sdk-bundler

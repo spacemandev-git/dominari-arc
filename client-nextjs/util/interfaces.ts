@@ -45,6 +45,19 @@ interface WasmTroop {
     id: string,
     troop_owner_player_id: string,
     troop_owner_player_key: string,
+    min_damage: string,
+    max_damage: string,
+    bonus_infantry: string,
+    bonus_armor: string,
+    bonus_aircraft: string,
+    bonus_feature: string,
+    health: string,
+    class: any, // Enum that'll end up as an object key
+    movement: number,
+    attack_range: number,
+    last_used: string,
+    recovery: string,
+    value: string
 }
 
 //dominari-sdk::wasm_wrappers::WasmPlayer
