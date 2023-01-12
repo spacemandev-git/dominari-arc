@@ -17,7 +17,6 @@ main();
 async function main(){
     await prepareFiles();
     console.log("Files prepared!");
-    return;
     const privateKey = Keypair.fromSecretKey(bs58.decode(process.argv[2]));
     const registryID = process.argv[3];
     const dominariID = process.argv[4];

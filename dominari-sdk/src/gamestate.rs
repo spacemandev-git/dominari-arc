@@ -6,7 +6,7 @@ use dominari::account::{InstanceIndex, PlayPhase};
 use core_ds::account::Entity;
 use dominari::component::*;
 use crate::{component_schemas::ComponentIndex, coreds::{get_registry_instance, get_keys_from_id}, wasm_wrappers::{WasmTile, WasmFeature, WasmTroop, WasmPlayer}, blueprints::BlueprintIndex};
-use web_sys::console;
+//use web_sys::console;
 
 #[wasm_bindgen]
 pub struct GameState {
