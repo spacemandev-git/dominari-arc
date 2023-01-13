@@ -7,7 +7,7 @@ import { Connection, Keypair, TransactionMessage, VersionedTransaction } from '@
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 
 const CONNSTRING = "http://localhost:8899";
-const connection = new Connection(CONNSTRING);
+const connection = new Connection(CONNSTRING, "finalized");
 main();
 
 /**
@@ -106,8 +106,9 @@ async function initDominari(privateKey: Keypair, registryID:string, dominariID:s
         instructions: [initDomIx]
     }).compileToLegacyMessage());
     tx.sign([privateKey]);
-    await connection.sendTransaction(tx)
-    
+    const sig = await connection.sendTransaction(tx)
+    await connection.confirmTransaction(sig);
+
     // Register Blueprints
     const blueprintJson = JSON.parse(fs.readFileSync("../client-nextjs/public/blueprints/blueprints.json").toString());
     let blueprintIxs = [];
