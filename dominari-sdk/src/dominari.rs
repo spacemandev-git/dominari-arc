@@ -712,6 +712,61 @@ impl Dominari {
         };
         serde_wasm_bindgen::to_value(&ix).unwrap()
     }
+
+    pub fn attack_unit(&self, instance: u64, payer: &str, attacker_id:u64, defender_id:u64, defending_tile_id:u64) -> JsValue {
+        let payer = Pubkey::from_str(payer).unwrap();
+        let config = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER
+        ], &self.program_id).0;
+        
+        let registry_instance = Pubkey::find_program_address(&[
+            core_ds::constant::SEEDS_REGISTRYINSTANCE_PREFIX,
+            registry::id().to_bytes().as_ref(),
+            instance.to_be_bytes().as_ref()
+        ], &core_ds::id()).0;
+
+        let instance_index = Pubkey::find_program_address(&[
+            SEEDS_INSTANCEINDEX,
+            registry_instance.to_bytes().as_ref(),
+        ], &self.program_id).0;
+
+        let registry_config = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_REGISTRYSIGNER,
+        ], &registry::id()).0;
+
+        let ab_signer = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER,
+        ], &self.program_id).0;
+
+        let ab_registration = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
+            ab_signer.to_bytes().as_ref()
+        ], &registry::id()).0;
+
+        let attacker = get_keys_from_id(registry_instance, vec![attacker_id])[0];
+        let defender = get_keys_from_id(registry_instance, vec![defender_id])[0];
+        let defending_tile = get_keys_from_id(registry_instance, vec![defending_tile_id])[0];
+
+        let ix = Instruction {
+            program_id: self.program_id,
+            accounts: dominari::accounts::AttackTile {
+                payer,
+                system_program,
+                config,
+                instance_index,
+                registry_config,
+                registry_program: registry::id(),
+                ab_registration,
+                coreds: core_ds::id(),
+                registry_instance,
+                attacker,
+                defender,
+                defending_tile
+            }.to_account_metas(Some(true)),
+            data: dominari::instruction::AttackTile {}.data()
+        };
+        serde_wasm_bindgen::to_value(&ix).unwrap()
+    }
 }   
 
 /*

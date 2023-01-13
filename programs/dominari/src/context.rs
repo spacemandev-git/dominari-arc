@@ -430,8 +430,6 @@ pub struct AttackTile <'info> {
     pub config: Box<Account<'info, Config>>,
     pub instance_index: Box<Account<'info, InstanceIndex>>,    
 
-    pub unit_blueprint: Account<'info, Blueprint>,
-
     //Registry
     #[account(
         seeds = [SEEDS_REGISTRYSIGNER.as_slice()],
