@@ -838,18 +838,79 @@ pub mod dominari {
         Ok(())
     }
     //pub fn modify_unit(ctx:Context<ModUnit>) -> Result<()> {}
-
-    //pub fn build_feature(ctx:Context<BuildFeature>) -> Result<()> {}
+    
     //pub fn use_[feature](ctx:Context<UseFeature>) -> Result<()> {}
+    pub fn use_feature(ctx:Context<UseFeature>, use_feature_type: UseFeatureType) -> Result<()> {
+        let reference = &ctx.accounts.config.components;
+        let config_seeds:&[&[u8]] = &[
+            SEEDS_ABSIGNER,
+            &[*ctx.bumps.get("config").unwrap()]
+        ];
+        let signer_seeds = &[config_seeds];
+
+        // Check if the game is paused
+        if ctx.accounts.instance_index.play_phase != PlayPhase::Play {
+            return err!(DominariError::GamePaused)
+        }
+
+        // Check that Occupant and Feature component of Tile is the same as those passed in
+        let occupant_component = ctx.accounts.tile.components.get(&reference.occupant).unwrap();
+        let feature_component = ctx.accounts.tile.components.get(&reference.feature).unwrap();
+        let occupant = ComponentOccupant::try_from_slice(&occupant_component.data.as_slice()).unwrap();
+        let feature = ComponentFeature::try_from_slice(&feature_component.data.as_slice()).unwrap();
+        if occupant.occupant_id.unwrap() != ctx.accounts.unit.entity_id {
+            return err!(DominariError::InvalidAccounts)
+        }
+        if feature.feature_id.unwrap() != ctx.accounts.feature.entity_id {
+            return err!(DominariError::InvalidAccounts)
+        }
+
+
+        // Match FeatureUse type with what components to fetch
+        match use_feature_type {
+            UseFeatureType::Healer => {
+                // Grab the Healing Component from Feature
+                let healing_component = ctx.accounts.feature.components.get(&reference.healing_power).unwrap();
+                let healing = ComponentHealingPower::try_from_slice(&healing_component.data.as_slice()).unwrap();
+
+                // Grab Health Component from 
+                let health_component = ctx.accounts.unit.components.get(&reference.health).unwrap();
+                let mut health = ComponentHealth::try_from_slice(&health_component.data.as_slice()).unwrap();
+
+                health.health += healing.heals;
+
+                // Update unit's health component
+                
+                let modify_health_ctx = CpiContext::new_with_signer(
+                    ctx.accounts.registry_program.to_account_info(),
+                    registry::cpi::accounts::ModifyComponent {
+                        registry_config: ctx.accounts.registry_config.to_account_info(),
+                        entity: ctx.accounts.unit.to_account_info(),
+                        action_bundle: ctx.accounts.config.to_account_info(),
+                        action_bundle_registration: ctx.accounts.ab_registration.to_account_info(),
+                        core_ds: ctx.accounts.coreds.to_account_info(),
+                    },
+                    signer_seeds
+                );
+                registry::cpi::req_modify_component(modify_health_ctx, vec![(reference.health.key(), health.try_to_vec().unwrap())])?;
+            },
+            _=> {
+                msg!("That feature type is not implemented yet!")
+            }
+        }
+        Ok(())
+    }
 
     // Pass in multiple entities through remaining accounts; will iterate and remove them if they are marked inactive
-    //pub fn reclaim_entity_sol(ctx:Context<ReclaimSol>) -> Result<()> {}
+    // pub fn reclaim_entity_sol(ctx:Context<ReclaimSol>) -> Result<()> {}
+    /*
     pub fn reclaim_sol(ctx:Context<ReclaimSol>) -> Result<()> {
         // Can Close *Instance Index* if it's Empty
         // Can Close Map, Tiles, Features if Leader
         // Can Close Troops if Troop Owner
         Ok(())
     }
+    */
 }
 
 pub fn get_random_u64(max: u64) -> u64 {

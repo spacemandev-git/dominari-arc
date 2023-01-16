@@ -16,6 +16,9 @@ pub enum DominariError {
 
     #[msg("Game Paused")]
     GamePaused,
+
+    #[msg("Invalid Accounts!")]
+    InvalidAccounts,
 }
 
 #[error_code]

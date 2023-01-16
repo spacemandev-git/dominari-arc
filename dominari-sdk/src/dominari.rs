@@ -1,8 +1,9 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction, InstructionData};
 use core_ds::{state::SerializedComponent, constant::SEEDS_ENTITY_PREFIX};
 use core_ds::account::MaxSize;
+use dominari::state::UseFeatureType;
 use dominari::{component::*, constant::{SEEDS_BLUEPRINT, SEEDS_INSTANCEINDEX}, state::GameConfig};
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::{prelude::*, throw_str};
 use std::{str::FromStr, collections::BTreeMap};
 use anchor_lang::system_program::ID as system_program;
 use crate::coreds::get_keys_from_id;
@@ -713,7 +714,7 @@ impl Dominari {
         serde_wasm_bindgen::to_value(&ix).unwrap()
     }
 
-    pub fn attack_unit(&self, instance: u64, payer: &str, attacker_id:u64, defender_id:u64, defending_tile_id:u64) -> JsValue {
+    pub fn attack_unit(&self, payer: &str, instance: u64, attacker_id:u64, defender_id:u64, defending_tile_id:u64) -> JsValue {
         let payer = Pubkey::from_str(payer).unwrap();
         let config = Pubkey::find_program_address(&[
             dominari::constant::SEEDS_ABSIGNER
@@ -767,6 +768,71 @@ impl Dominari {
         };
         serde_wasm_bindgen::to_value(&ix).unwrap()
     }
+
+    pub fn use_feature(&self, payer:&str, instance:u64, use_feature_type_str: &str, tile_id:u64, unit_id:u64, feature_id:u64, _target_tile_id:Option<u64>) -> JsValue {
+        let payer = Pubkey::from_str(payer).unwrap();
+        let config = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER
+        ], &self.program_id).0;
+        
+        let registry_instance = Pubkey::find_program_address(&[
+            core_ds::constant::SEEDS_REGISTRYINSTANCE_PREFIX,
+            registry::id().to_bytes().as_ref(),
+            instance.to_be_bytes().as_ref()
+        ], &core_ds::id()).0;
+
+        let instance_index = Pubkey::find_program_address(&[
+            SEEDS_INSTANCEINDEX,
+            registry_instance.to_bytes().as_ref(),
+        ], &self.program_id).0;
+
+        let registry_config = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_REGISTRYSIGNER,
+        ], &registry::id()).0;
+
+        let ab_signer = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER,
+        ], &self.program_id).0;
+
+        let ab_registration = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
+            ab_signer.to_bytes().as_ref()
+        ], &registry::id()).0;
+
+        let unit = get_keys_from_id(registry_instance, vec![unit_id])[0];
+        let tile= get_keys_from_id(registry_instance, vec![tile_id])[0];
+        let feature = get_keys_from_id(registry_instance, vec![feature_id])[0];
+
+        let use_feature_type;
+
+        match use_feature_type_str {
+            "healer" => {use_feature_type = UseFeatureType::Healer},
+            _=>{throw_str("This feature not supported!")}
+        }
+
+        let ix = Instruction {
+            program_id: self.program_id,
+            accounts: dominari::accounts::UseFeature {
+                payer,
+                system_program,
+                config,
+                instance_index,
+                registry_config,
+                registry_program: registry::id(),
+                ab_registration,
+                coreds: core_ds::id(),
+                registry_instance,
+                unit,
+                tile,
+                feature
+            }.to_account_metas(Some(true)),
+            data: dominari::instruction::UseFeature {
+                use_feature_type
+            }.data()
+        };
+        serde_wasm_bindgen::to_value(&ix).unwrap()
+    }
+
 }   
 
 /*

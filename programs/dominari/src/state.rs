@@ -54,3 +54,12 @@ impl DependentMaxSize for GameConfig {
 pub trait DependentMaxSize {
     fn get_max_size(&self) -> u64;
 }
+
+#[cfg_attr(feature = "sdk", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorDeserialize, AnchorSerialize, Debug, Clone)]
+pub enum UseFeatureType {
+    Healer, 
+    Portal,
+    Attack,
+    Loot,
+}

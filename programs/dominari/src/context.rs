@@ -458,8 +458,52 @@ pub struct AttackTile <'info> {
         mut,
         constraint = defending_tile.instance == registry_instance.instance
     )]
-    pub defending_tile: Box<Account<'info, Entity>>,
-    
+    pub defending_tile: Box<Account<'info, Entity>>,    
+}
+
+#[derive(Accounts)]
+pub struct UseFeature<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+
+    //Action Bundle
+    #[account(
+        seeds=[SEEDS_ABSIGNER],
+        bump,
+    )]
+    pub config: Box<Account<'info, Config>>,
+    pub instance_index: Box<Account<'info, InstanceIndex>>,    
+
+    //Registry
+    #[account(
+        seeds = [SEEDS_REGISTRYSIGNER.as_slice()],
+        bump,
+        seeds::program = registry_instance.registry.key()
+    )]
+    pub registry_config: Account<'info, RegistryConfig>,
+    pub registry_program: Program<'info, Registry>,
+    pub ab_registration: Box<Account<'info, ActionBundleRegistration>>,
+
+    //CoreDs
+    pub coreds: Program<'info, CoreDs>, 
+    pub registry_instance: Account<'info, RegistryInstance>,
+
+    #[account(
+        mut,
+        constraint = unit.instance == registry_instance.instance
+    )]
+    pub unit: Box<Account<'info, Entity>>,
+    #[account(
+        mut,
+        constraint = tile.instance == registry_instance.instance
+    )]
+    pub tile: Box<Account<'info, Entity>>,
+    #[account(
+        mut,
+        constraint = feature.instance == registry_instance.instance
+    )]
+    pub feature: Box<Account<'info, Entity>>,
 }
 
 #[derive(Accounts)]
