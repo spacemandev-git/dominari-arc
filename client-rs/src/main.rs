@@ -10,7 +10,7 @@ async fn main() {
     );
     gamestate.load_state().await;
     println!("Tile ID: {:?}", gamestate.get_tile_id(0, 0));
-    let tile_id:u64 = gamestate.get_tile_id(0, 0).parse().unwrap();
+    let tile_id: u64 = gamestate.get_tile_id(0, 0).parse().unwrap();
     let tile_entity = gamestate.get_entity(tile_id).unwrap();
     //println!("Tile Components: {:?}", tile_entity.components);
     let tile_feature = gamestate.get_entity_feature(&tile_id).unwrap();
