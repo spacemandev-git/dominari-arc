@@ -3,12 +3,12 @@ import { FaGamepad, FaWrench } from 'react-icons/fa';
 import { createContext, useRef, useState, useEffect, useContext } from "react";
 import { Dominari, GameState } from "dominari-sdk";
 import { COLORS, DOMINARI_PROGRAM_ID, LOCAL_STORAGE_GAMEINSTANCES, LOCAL_STORAGE_PRIVATEKEY, REGISTRY_PROGRAM_ID } from "../util/constants";
-import { ComputeBudgetProgram, Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { ComputeBudgetProgram, Connection, Keypair, PublicKey, Transaction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 import { useLocalStorage } from "usehooks-ts";
 import {encode, decode} from 'bs58';
 import toml from 'toml';
-import {randomU64, ixPack, ixWasmToJs} from '../util/util';
-import { Stage, Container } from 'react-pixi-fiber'
+import {randomU64, ixPack, ixWasmToJs, getDistance} from '../util/util';
+import { Stage, Container, render } from 'react-pixi-fiber'
 import { WasmTile, WasmPlayer, NavEnum, Blueprints, PlayPauseState } from '../util/interfaces';
 import * as PIXI from 'pixi.js';
 import { Observable } from "rxjs";
@@ -393,7 +393,7 @@ const MapPage = () => {
 
     // State
     const [player, setPlayer] = useState({} as WasmPlayer);
-    const [selectedTile, selectTile] = useState("");
+    const [selectedTroopTile, selectTroopTile] = useState({} as WasmTile);
     const [showAddTroopModal, setTroopModal] = useState(false);
     const [showUseFeatureModal, setFeatureModal] = useState(false);
 
@@ -516,6 +516,10 @@ const MapPage = () => {
                         renderTile(gamestate.get_wasm_tile(BigInt(event.data.tile)));
                         break;
                     case "TroopMovement": 
+                        await gamestate.update_entity(BigInt(event.data.from));
+                        await gamestate.update_entity(BigInt(event.data.to));
+                        await gamestate.update_entity(BigInt(event.data.unit));
+                        renderMap();
                         break;
                     case "TileAttacked": 
                         break;
@@ -533,9 +537,13 @@ const MapPage = () => {
             renderMap();
             
             // After map is rendered, check if selected tile is a troop
-            // Then renderTile() for it's movement
+            // Then renderTile() for it's movement           
+            if(!selectedTroopTile.troop){ // && selectedTroopTile.x){
+                // Add troop modal if there's no troop on the tile
+                setTroopModal(true);
+            }
         }
-    }, [selectedTile])
+    }, [selectedTroopTile])
     
 
     // Constants
@@ -546,10 +554,18 @@ const MapPage = () => {
     const renderTile = (tile: WasmTile) => {
         let box = new PIXI.Graphics();
         box.name = `${tile.x},${tile.y}`;
-        if(selectedTile == box.name) {
+        if(selectedTroopTile.x == tile.x && selectedTroopTile.y == tile.y) {
             box.beginFill(SELECTED_TILE_COLOR);
         } else {
-            box.beginFill(UNSLECTED_TILE_COLOR);
+            //Check if tile is within movement distance of selected tile
+            if(
+                selectedTroopTile.troop &&
+                selectedTroopTile.troop.troop_owner_player_key == privateKey.publicKey.toString() && 
+                getDistance(selectedTroopTile.x, selectedTroopTile.y, tile.x, tile.y) <= selectedTroopTile.troop.movement){
+                box.beginFill(COLORS.GREEN);
+            } else {
+                box.beginFill(UNSLECTED_TILE_COLOR);
+            }
         }
         box.drawRect(5+(tile.x*TILE_SIZE), 5+(tile.y*TILE_SIZE), TILE_SIZE-5, TILE_SIZE-5);
         containerRef.current?.addChild!(box);
@@ -561,8 +577,8 @@ const MapPage = () => {
             fill: 0xFFFFFF,
             align: 'center'
         });    
-        text.position.x = 10 + (TILE_SIZE * tile.x)
-        text.position.y = 10 + (TILE_SIZE * tile.y)
+        text.position.x = 10 + (TILE_SIZE * tile.x);
+        text.position.y = 10 + (TILE_SIZE * tile.y);
         containerRef.current?.addChild!(text);
         
         // Add Feature Icon
@@ -577,35 +593,55 @@ const MapPage = () => {
             containerRef.current?.addChild!(featureSprite);
         }
         // Add Troop Icon
-        let troopSprite = PIXI.Sprite.from(`assets/add_unit.png`);
-        troopSprite.interactive = true;
-
+        let troopSprite;
         if(tile.troop){
-            let box:PIXI.Graphics | undefined = containerRef.current?.getChildByName!(`${tile.x},${tile.y}`);
             troopSprite = PIXI.Sprite.from(`assets/troops/${tile.troop.name.toLowerCase()}.png`);
-            troopSprite.on("mousedown", () => {
-                if(selectedTile == `${tile.x},${tile.y}`){
-                    selectTile("");
-                    box!.drawRect(5+(tile.x*TILE_SIZE), 5+(tile.y*TILE_SIZE), TILE_SIZE-5, TILE_SIZE-5);            
-                } else {
-                    box!.drawRect(5+(tile.x*TILE_SIZE), 5+(tile.y*TILE_SIZE), TILE_SIZE-5, TILE_SIZE-5);
-                    selectTile(`${tile.x},${tile.y}`);
-                }
-                console.log("Move Troop")
-            })
         } else {
-            troopSprite.on("mousedown", () => {
-                console.log("Add Unit!")
-                if(selectedTile == `${tile.x},${tile.y}`){
-                    console.log("Tile currently selected")
-                    selectTile("");
-                } else {
-                    console.log("Tile not selected")
-                    selectTile(`${tile.x},${tile.y}`);
-                    setTroopModal(true);
-                }
-            })
+            troopSprite = PIXI.Sprite.from(`assets/add_unit.png`);
         }
+
+        troopSprite.interactive = true;
+        troopSprite.on("mousedown", async () => {
+            if(selectedTroopTile.x == tile.x && selectedTroopTile.y == tile.y){
+                // This tile is currently selected
+                selectTroopTile({} as WasmTile);
+            } else {
+                // This tile is not selected
+                // IF there is a selectedTile, check if this new tile is eligible for move or attack
+                // ELSE select this tile
+                console.log("Selected Tile: ", selectedTroopTile);
+                if(selectedTroopTile.x && tile.troop && getDistance(selectedTroopTile.x, selectedTroopTile.y, tile.x, tile.y) <= selectedTroopTile.troop.attack_range ){
+                    // This tile is within attack range of the selected tile's troop
+
+                } else if(selectedTroopTile.x && getDistance(selectedTroopTile.x, selectedTroopTile.y, tile.x, tile.y) <= selectedTroopTile.troop.movement) {
+                    // Tile doesn't have a troop and is within movement range of the selected Troop
+
+                    const moveIx = ixWasmToJs(dominari.move_unit(
+                        privateKey.publicKey.toString(),
+                        gamestate.instance,
+                        BigInt(selectedTroopTile.troop.id),
+                        BigInt(gamestate.get_tile_id(selectedTroopTile.x, selectedTroopTile.y)),
+                        BigInt(gamestate.get_tile_id(tile.x, tile.y)),
+                    ));
+
+                    const tx = new VersionedTransaction(new TransactionMessage({
+                        payerKey: privateKey.publicKey,
+                        recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
+                        instructions: [moveIx]
+                    }).compileToLegacyMessage());
+                    tx.sign([privateKey]);
+                    const sig = await connection.sendTransaction(tx);
+                } else {
+                    selectTroopTile(tile);
+                }
+            }
+        })
+
+        troopSprite.on("mouseover", () => {
+            // Show info about selected unit
+            console.log("Troop Health: ", tile.troop?.health);
+        });
+
         troopSprite.anchor.x = 0;
         troopSprite.anchor.y = 0;
         troopSprite.width = 50;
@@ -634,7 +670,7 @@ const MapPage = () => {
                 {player?.name && <PlayerFragment {...{player}}></PlayerFragment>}
                 {!player?.name && <CreatePlayerFragment {...{setPlayer}}></CreatePlayerFragment>}
             </div>
-            {showAddTroopModal && <AddTroopModal {...{setShowModal: setTroopModal, player: player, selectedTile: selectedTile}}></AddTroopModal>}
+            {showAddTroopModal && <AddTroopModal {...{setShowModal: setTroopModal, player: player, selectedTroopTile: selectedTroopTile}}></AddTroopModal>}
             <Stage options={{height: 125*8 +5, width: 125*8 +5, backgroundColor: 0xFFFFFF}} ref={stageRef}>
                 <Container ref={containerRef}></Container>
             </Stage>
@@ -729,7 +765,7 @@ const CreatePlayerFragment = ({setPlayer}: {setPlayer:Function}) => {
     )
 }
 
-const AddTroopModal = ({setShowModal, player, selectedTile}: {setShowModal:Function, player:WasmPlayer, selectedTile: string}) => {
+const AddTroopModal = ({setShowModal, player, selectedTroopTile}: {setShowModal:Function, player:WasmPlayer, selectedTroopTile: WasmTile}) => {
     // Context
     const {
         connection,
@@ -774,7 +810,7 @@ const AddTroopModal = ({setShowModal, player, selectedTile}: {setShowModal:Funct
                     onClick={() => setShowModal(false)}
                   >
                     <span className="bg-transparent text-black opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">
-                      ×
+                      x
                     </span>
                   </button>
                 </div>
@@ -796,10 +832,7 @@ const AddTroopModal = ({setShowModal, player, selectedTile}: {setShowModal:Funct
                     type="button"
                     onClick={async () => {
                         console.log(`Spawning ${selectedUnit}`)
-                        let tile = {
-                            x: parseInt(selectedTile.split(",")[0]),
-                            y: parseInt(selectedTile.split(",")[1])
-                        }
+                        let tile = selectedTroopTile;
                         let tileID = BigInt(gamestate.get_tile_id(tile.x, tile.y))
                         let playerID:bigint = BigInt((gamestate.get_player_info(privateKey.publicKey.toString())).id);
                         

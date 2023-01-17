@@ -40,6 +40,10 @@ export const ixPack = async (ixs: anchor.web3.TransactionInstruction[]): Promise
     return ixGroupArray;
 }
 
+export const getDistance = (srcX: number, srcY:number, destX:number, destY:number) => {
+    return Math.sqrt(Math.pow((destX-srcX),2)+Math.pow((destY-srcY),2));
+}
+
 export const randomU64 = ():bigint => {
     return BigInt(`0x${randomBytes(8).toString("hex")}`);
 }
