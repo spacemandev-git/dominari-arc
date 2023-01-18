@@ -9,7 +9,7 @@ import {encode, decode} from 'bs58';
 import toml from 'toml';
 import {randomU64, ixPack, ixWasmToJs, getDistance} from '../util/util';
 import { Stage, Container, render } from 'react-pixi-fiber'
-import { WasmTile, WasmPlayer, NavEnum, Blueprints, PlayPauseState } from '../util/interfaces';
+import { WasmTile, WasmPlayer, NavEnum, Blueprints, PlayPauseState, WasmTroop } from '../util/interfaces';
 import * as PIXI from 'pixi.js';
 import { Observable } from "rxjs";
 
@@ -394,6 +394,7 @@ const MapPage = () => {
     // State
     const [player, setPlayer] = useState({} as WasmPlayer);
     const [selectedTroopTile, selectTroopTile] = useState({} as WasmTile);
+    const [hoverTroopTile, setHoverTroopTile] = useState({} as WasmTile);
     const [showAddTroopModal, setTroopModal] = useState(false);
     const [showUseFeatureModal, setFeatureModal] = useState(false);
 
@@ -639,7 +640,8 @@ const MapPage = () => {
 
         troopSprite.on("mouseover", () => {
             // Show info about selected unit
-            console.log("Troop Health: ", tile.troop?.health);
+            //console.log("Troop Health: ", tile.troop?.health);
+            setHoverTroopTile(tile);
         });
 
         troopSprite.anchor.x = 0;
@@ -671,11 +673,55 @@ const MapPage = () => {
                 {!player?.name && <CreatePlayerFragment {...{setPlayer}}></CreatePlayerFragment>}
             </div>
             {showAddTroopModal && <AddTroopModal {...{setShowModal: setTroopModal, player: player, selectedTroopTile: selectedTroopTile}}></AddTroopModal>}
-            <Stage options={{height: 125*8 +5, width: 125*8 +5, backgroundColor: 0xFFFFFF}} ref={stageRef}>
-                <Container ref={containerRef}></Container>
-            </Stage>
+            <div className="flex flex-row">
+                <Stage options={{height: 125*8 +5, width: 125*8 +5, backgroundColor: 0xFFFFFF}} ref={stageRef}>
+                    <Container ref={containerRef}></Container>
+                </Stage>
+                <div className="flex flex-col ml-10">
+                    <h1 className="text-3xl">Selected Troop</h1>
+                    <TroopInfo troop={selectedTroopTile.troop}></TroopInfo>
+                    <br/><br/><br/><br/>
+                    <h1 className="text-3xl">Hover Troop</h1>
+                    <TroopInfo troop={hoverTroopTile.troop}></TroopInfo>
+                </div>
+            </div>
         </div>
     )
+}
+
+const TroopInfo = ({troop}: {troop:WasmTroop}) => {
+    const {connection} = useContext(DominariContext);
+    const [slot,setSlot] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(async () => setSlot(await connection.getSlot()), 1000);
+        return () => {
+          clearInterval(interval);
+        };
+    }, []);
+
+    if(!troop){
+        return(<></>)
+    } else {
+        return(
+            <div className="flex flex-col">
+                <label>Troop: {troop.name} | Class {troop.class} </label>
+                <label>ID: {troop.id}</label>
+                <label>Owner: {troop.troop_owner_player_key}</label>
+                <label>Health: {troop.health}</label>
+                <label>Damage {troop.min_damage}..{troop.max_damage} </label>
+                <div className="flex flex-row">
+                    <label className="p-1">INF+  {troop.bonus_infantry}</label>
+                    <label className="p-1">ARMR+ {troop.bonus_armor}</label>
+                    <label className="p-1">AIR+  {troop.bonus_aircraft}</label>
+                    <label className="p-1">FEAT+ {troop.bonus_feature}</label>
+                </div>
+                <label>Move: {troop.movement} | ATK Range: {troop.attack_range}</label>
+                <label>Last Used Slot: {troop.last_used} | Recovery: {troop.recovery} </label>
+                <label>Current Slot: {slot} | Ready In: {( slot-(parseInt(troop.last_used) + parseInt(troop.recovery)))/-2}s</label>
+            </div>
+        )       
+    }
 }
 
 const PlayerFragment = ({player}: {player:WasmPlayer}) => {

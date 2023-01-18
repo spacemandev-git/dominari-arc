@@ -225,7 +225,7 @@ impl GameState {
                 troop_owner_player_id: troop_player.player.unwrap().to_string(),
                 troop_owner_player_key: troop_player.owner.unwrap().to_string(),
                 min_damage: damage.min_damage.to_string(),
-                max_damge: damage.max_damage.to_string(),
+                max_damage: damage.max_damage.to_string(),
                 bonus_infantry: damage.bonus_infantry.to_string(),
                 bonus_armor: damage.bonus_armor.to_string(),
                 bonus_aircraft: damage.bonus_aircraft.to_string(),

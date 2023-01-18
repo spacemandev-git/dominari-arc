@@ -35,12 +35,12 @@ export interface WasmTile {
     troop: WasmTroop,
 }
 
-interface WasmFeature {
+export interface WasmFeature {
     name: string,
     id: string
 }
 
-interface WasmTroop {
+export interface WasmTroop {
     name: string,
     id: string,
     troop_owner_player_id: string,
