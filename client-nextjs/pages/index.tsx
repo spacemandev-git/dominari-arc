@@ -8,7 +8,7 @@ import { useLocalStorage } from "usehooks-ts";
 import {encode, decode} from 'bs58';
 import toml from 'toml';
 import {randomU64, ixPack, ixWasmToJs, getDistance} from '../util/util';
-import { Stage, Container, render } from 'react-pixi-fiber'
+import { Stage, Container } from 'react-pixi-fiber'
 import { WasmTile, WasmPlayer, NavEnum, Blueprints, PlayPauseState, WasmTroop } from '../util/interfaces';
 import * as PIXI from 'pixi.js';
 import { Observable } from "rxjs";
@@ -38,6 +38,7 @@ export interface DominariContextInterface {
     setNav: Function, // for debug to instantly switch after game state loaded
     playpause: PlayPauseState,
     setPlayPause: Function,
+    slot: number,
 }
 
 
@@ -52,6 +53,7 @@ const Home: NextPage = () => {
     const [privateKeyStr, setPrivateKeyStr] = useLocalStorage(LOCAL_STORAGE_PRIVATEKEY, "");
     const [blueprints, setBlueprints] = useState({} as Blueprints);
     const [playpause, setPlayPause] = useState("Paused" as PlayPauseState);
+    const [slot,setSlot] = useState(0);
 
     let gamestate = useRef<GameState>(new GameState(
         rpc,
@@ -93,7 +95,15 @@ const Home: NextPage = () => {
             console.log(privateKeyStr);
             setPrivateKey(Keypair.fromSecretKey(decode(privateKeyStr)));
         }
-    }, [privateKeyStr])
+    }, [privateKeyStr]);
+
+
+    useEffect(() => {
+        const interval = setInterval(async () => setSlot(await connection.getSlot()), 1000);
+        return () => {
+          clearInterval(interval);
+        };
+    }, []);
 
     return (
         <NoSSR>
@@ -108,7 +118,8 @@ const Home: NextPage = () => {
                     blueprints,
                     setNav,
                     playpause,
-                    setPlayPause
+                    setPlayPause,
+                    slot,
                 }}>
                 <div className="grid grid-col-2">
                     <div className="fixed top-0 left-0 h-screen w-16 flex flex-col
@@ -155,11 +166,11 @@ const Settings = () => {
 
     // Local Component State
     const [balance, updateBalance] = useState(0);
-    const getBalance = async () => {
-        console.log("Refreshing balance");
-        updateBalance(await connection.getBalance(privateKey.publicKey!));
+    const getBalance = () => {
+        connection.getBalance(privateKey.publicKey!).then((balance) => {
+            updateBalance(balance)
+        });
     }
-    useEffect(() => {getBalance()});
     const airdrop = async () => {
         await connection.requestAirdrop(privateKey.publicKey!, 100e9);
         alert("Requested! Please wait a while to refresh...")
@@ -384,7 +395,8 @@ const MapPage = () => {
         gamestate,
         dominari,
         blueprints,
-        setPlayPause
+        setPlayPause,
+        slot
     } = useContext(DominariContext);
 
     // Refs
@@ -523,6 +535,10 @@ const MapPage = () => {
                         renderMap();
                         break;
                     case "TileAttacked": 
+                        await gamestate.update_entity(BigInt(event.data.attacker));
+                        await gamestate.update_entity(BigInt(event.data.defender));
+                        await gamestate.update_entity(BigInt(event.data.defendingTile));
+                        renderMap();
                         break;
                 }
             });
@@ -610,11 +626,34 @@ const MapPage = () => {
                 // This tile is not selected
                 // IF there is a selectedTile, check if this new tile is eligible for move or attack
                 // ELSE select this tile
-                console.log("Selected Tile: ", selectedTroopTile);
-                if(selectedTroopTile.x && tile.troop && getDistance(selectedTroopTile.x, selectedTroopTile.y, tile.x, tile.y) <= selectedTroopTile.troop.attack_range ){
+                if(selectedTroopTile.troop && tile.troop && getDistance(selectedTroopTile.x, selectedTroopTile.y, tile.x, tile.y) <= selectedTroopTile.troop.attack_range ){
                     // This tile is within attack range of the selected tile's troop
+                    console.log("Attacking Unit!");
+                    const attackIx = ixWasmToJs(dominari.attack_unit(
+                        privateKey.publicKey.toString(),
+                        gamestate.instance,
+                        BigInt(selectedTroopTile.troop.id),
+                        BigInt(tile.troop.id),
+                        BigInt(gamestate.get_tile_id(tile.x, tile.y)),
+                    ));
 
-                } else if(selectedTroopTile.x && getDistance(selectedTroopTile.x, selectedTroopTile.y, tile.x, tile.y) <= selectedTroopTile.troop.movement) {
+                    const tx = new VersionedTransaction(new TransactionMessage({
+                        payerKey: privateKey.publicKey,
+                        recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
+                        instructions: [
+                            ComputeBudgetProgram.setComputeUnitLimit({units: 1400000}),
+                            attackIx
+                        ]
+                    }).compileToLegacyMessage());
+                    tx.sign([privateKey]);
+                    try{
+                        const sig = await connection.sendRawTransaction(tx.serialize(), {skipPreflight: true});
+                        console.log(sig);
+                    } catch (e){
+                        console.log(e);
+                    }
+
+                } else if(selectedTroopTile.troop && getDistance(selectedTroopTile.x, selectedTroopTile.y, tile.x, tile.y) <= selectedTroopTile.troop.movement) {
                     // Tile doesn't have a troop and is within movement range of the selected Troop
 
                     const moveIx = ixWasmToJs(dominari.move_unit(
@@ -628,10 +667,12 @@ const MapPage = () => {
                     const tx = new VersionedTransaction(new TransactionMessage({
                         payerKey: privateKey.publicKey,
                         recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
-                        instructions: [moveIx]
+                        instructions: [
+                            moveIx
+                        ]
                     }).compileToLegacyMessage());
                     tx.sign([privateKey]);
-                    const sig = await connection.sendTransaction(tx);
+                    const sig = await connection.sendTransaction(tx, {skipPreflight: true});
                 } else {
                     selectTroopTile(tile);
                 }
@@ -650,12 +691,20 @@ const MapPage = () => {
         troopSprite.height = 50;
         troopSprite.position.x = 10 + (TILE_SIZE * tile.x);
         troopSprite.position.y = 70 + (TILE_SIZE * tile.y);
+        troopSprite.name = `${tile.x},${tile.y}:UNIT`;
+        let attackSprite = PIXI.Sprite.from(`assets/attack.png`);
+        containerRef.current?.addChild!(troopSprite);
 
         if(tile.troop?.troop_owner_player_key == privateKey.publicKey.toString()) {
             troopSprite.tint = COLORS.GREEN;
+        } else if (tile.troop && selectedTroopTile.troop && getDistance(tile.x, tile.y, selectedTroopTile.x, selectedTroopTile.y) <= selectedTroopTile.troop.attack_range) {
+            // Draw a little cross swords on the sprite to show it's within attacking range
+            attackSprite.width = 35;
+            attackSprite.height = 35;
+            attackSprite.position.x = 10 + (TILE_SIZE * tile.x);
+            attackSprite.position.y = 70 + (TILE_SIZE * tile.y);
+            containerRef.current?.addChild!(attackSprite);
         }        
-        
-        containerRef.current?.addChild!(troopSprite);
     }
 
     // Functions
@@ -690,15 +739,10 @@ const MapPage = () => {
 }
 
 const TroopInfo = ({troop}: {troop:WasmTroop}) => {
-    const {connection} = useContext(DominariContext);
-    const [slot,setSlot] = useState(0);
-
-    useEffect(() => {
-        const interval = setInterval(async () => setSlot(await connection.getSlot()), 1000);
-        return () => {
-          clearInterval(interval);
-        };
-    }, []);
+    const {
+        connection,
+        slot
+    } = useContext(DominariContext);
 
     if(!troop){
         return(<></>)

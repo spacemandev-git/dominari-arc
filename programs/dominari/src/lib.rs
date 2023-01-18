@@ -681,6 +681,7 @@ pub mod dominari {
         let attacker_damage = ComponentDamage::try_from_slice(&attacker_damage_c.data.as_slice()).unwrap();
 
         // Check defender is active and has health component
+        
         let defender_active_c = defender.components.get(&reference.active).unwrap();
         let mut defender_active = ComponentActive::try_from_slice(&defender_active_c.data.as_slice()).unwrap();
         if defender_active.active == false {
