@@ -12,7 +12,7 @@ import { Stage, Container } from 'react-pixi-fiber'
 import { WasmTile, WasmPlayer, NavEnum, Blueprints, PlayPauseState, WasmTroop } from '../util/interfaces';
 import * as PIXI from 'pixi.js';
 import { Observable } from "rxjs";
-
+import { Toaster,toast } from "react-hot-toast";
 // Events Decoder Imports
 import {Layout} from "@solana/buffer-layout";
 import { Idl, IdlTypeDef, IdlEvent } from "@project-serum/anchor/dist/cjs/idl";
@@ -122,6 +122,10 @@ const Home: NextPage = () => {
                     slot,
                 }}>
                 <div className="grid grid-col-2">
+                    <Toaster
+                        position="top-right"
+                        reverseOrder={false}
+                    ></Toaster>
                     <div className="fixed top-0 left-0 h-screen w-16 flex flex-col
                         bg-white dark:bg-gray-900 shadow-lg gap-4 items-center">
                         <div className="sidebar-icon group mt-36">
@@ -173,7 +177,7 @@ const Settings = () => {
     }
     const airdrop = async () => {
         await connection.requestAirdrop(privateKey.publicKey!, 100e9);
-        alert("Requested! Please wait a while to refresh...")
+        toast("Requested! Please wait a while to refresh...")
     }
 
     // LocalStorage
@@ -325,7 +329,7 @@ const Settings = () => {
         } else {
             setInstanceListStr(JSON.stringify([newInstanceId.toString]));
         }
-        alert(`Instance ${newInstanceId} finished initializing.`)
+        toast(`Instance ${newInstanceId} finished initializing.`)
     }
 
     return(
@@ -365,6 +369,7 @@ const Settings = () => {
                     if(BigInt(instanceRef.current?.value!) >= 0) {
                         setInstance(BigInt(instanceRef.current?.value!));
                     }
+                    toast("Game Loaded, switch to Map!")
                 }}>Change Game ID</button>
                 <label>Created Game IDs</label>
                 <select onChange={(selection) => {
@@ -372,7 +377,7 @@ const Settings = () => {
                     // Update Game Instance when Selection Made
                     setInstance(BigInt(selection.target.value));
                     instanceRef.current!.value = selection.target.value;
-                    alert("Game Loaded, switch to Map!");
+                    toast("Game Loaded, switch to Map!");
                 }}>
                     <option>Select Instance</option>
                     {getInstanceOptions()}
@@ -539,6 +544,20 @@ const MapPage = () => {
                         await gamestate.update_entity(BigInt(event.data.defender));
                         await gamestate.update_entity(BigInt(event.data.defendingTile));
                         renderMap();
+
+                        //get wasm troops; if either attacker or defender is user, then toast
+                        const attacker:WasmTroop = gamestate.get_wasm_troop(BigInt(event.data.attacker));
+                        const defender:WasmTroop = gamestate.get_wasm_troop(BigInt(event.data.defender));
+                        const defendingTile:WasmTile = gamestate.get_wasm_tile(BigInt(event.data.defendingTile));
+
+                        if(attacker.troop_owner_player_key == privateKey.publicKey.toString()){
+                            // Attacker did X Damage to Defender
+                            toast(`${attacker.name} did ${event.data.damage} damage to ${defender.name} at (${defendingTile.x}, ${defendingTile.y})`, {icon: '⚔'})
+                        } else if (defender.troop_owner_player_key == privateKey.publicKey.toString()){
+                            // Defending Unit on Tile X,Y Received Damage
+                            toast(`Your ${defender.name} at (${defendingTile.x}, ${defendingTile.y}) took ${event.data.damage} damage from ${attacker.name}`, {icon: '☠'})
+                        }
+                        
                         break;
                 }
             });

@@ -132,6 +132,10 @@ impl GameState{
         return serde_wasm_bindgen::to_value(&self.get_tile_info(tile_id)).unwrap()
     }
 
+    pub fn get_wasm_troop(&self, troop_id:u64) -> JsValue {
+        return serde_wasm_bindgen::to_value(&self.get_troop_info(troop_id)).unwrap()
+    }
+
     pub fn get_map(&self) -> JsValue {
         if self.index.is_none() {
             throw_str("Load state first!")
@@ -185,6 +189,37 @@ impl GameState{
  */
 impl GameState {
     
+    pub fn get_troop_info(&self, troop_id:u64) -> WasmTroop {
+        let troop_metadata = self.get_entity_metadata(&troop_id).unwrap();
+        let troop_player = self.get_entity_owner(&troop_id).unwrap();
+        let damage = self.get_entity_damage(&troop_id).unwrap();
+        let health = self.get_entity_health(&troop_id).unwrap();
+        let class = self.get_entity_troop_class(&troop_id).unwrap();
+        let range = self.get_entity_range(&troop_id).unwrap();
+        let last_used = self.get_entity_last_used(&troop_id).unwrap();
+        let value = self.get_entity_value(&troop_id).unwrap();
+
+        return WasmTroop {
+            name: troop_metadata.name,
+            id: troop_id.to_string(),
+            troop_owner_player_id: troop_player.player.unwrap().to_string(),
+            troop_owner_player_key: troop_player.owner.unwrap().to_string(),
+            min_damage: damage.min_damage.to_string(),
+            max_damage: damage.max_damage.to_string(),
+            bonus_infantry: damage.bonus_infantry.to_string(),
+            bonus_armor: damage.bonus_armor.to_string(),
+            bonus_aircraft: damage.bonus_aircraft.to_string(),
+            bonus_feature: damage.bonus_feature.to_string(),
+            health: health.health.to_string(),
+            class: class.class,
+            movement: range.movement,
+            attack_range: range.attack_range,
+            last_used: last_used.last_used.to_string(),
+            recovery: last_used.recovery.to_string(),
+            value: value.value.to_string()
+        };
+    }
+
     pub fn get_tile_info(&self, tile_id:u64) -> WasmTile {
         // All tiles have these four components
         let location = self.get_entity_location(&tile_id).unwrap();
@@ -208,6 +243,8 @@ impl GameState {
         }
 
         if troop.is_some() {
+            tile.troop = Some(self.get_troop_info(troop.unwrap()));
+            /*
             let t_id = troop.unwrap();
             let troop_metadata = self.get_entity_metadata(&t_id).unwrap();
             let troop_player = self.get_entity_owner(&t_id).unwrap();
@@ -238,6 +275,7 @@ impl GameState {
                 recovery: last_used.recovery.to_string(),
                 value: value.value.to_string()
             })
+            */
         }
         tile
     }
