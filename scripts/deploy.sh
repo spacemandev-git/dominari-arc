@@ -5,7 +5,7 @@ anchor build
 # Deploy Universe
 solana program deploy --program-id localhost_keypairs/core-ds-keypair.json target/deploy/core_ds.so
 
-cd ../dominari/arc
+cd ../dominari/arc2
 
 anchor build
 # Deploy Registry
