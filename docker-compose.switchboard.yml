@@ -1,0 +1,20 @@
+version: "3.3"
+services:
+  oracle:
+    image: "switchboardlabs/node:${SBV2_ORACLE_VERSION:-dev-v2-RC_01_05_23_03_24}" # https://hub.docker.com/r/switchboardlabs/node/tags
+    network_mode: host
+    restart: always
+    secrets:
+      - PAYER_SECRETS
+    environment:
+      - VERBOSE=1
+      - CLUSTER=localnet
+      - HEARTBEAT_INTERVAL=30 # Seconds
+      - ORACLE_KEY=FR1kjNVxGzB9pzicJm2efwjjwFjuY6q6KddoHsFoQMWH
+      - TASK_RUNNER_SOLANA_RPC=http://host.docker.internal:8899
+      - RPC_URL=http://host.docker.internal:8899
+    volumes:
+      - ./switchboard-config.json:/configs.json
+secrets:
+  PAYER_SECRETS:
+    file: /Users/spacemandev/.config/solana/id.json
