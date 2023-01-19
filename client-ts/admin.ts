@@ -1,4 +1,4 @@
-import { ComponentIndex, Dominari, Registry } from "./dominari-sdk";
+import { ComponentIndex, Dominari, Registry } from "../dominari-sdk/dominari-sdk-nodejs";
 import glob from "glob";
 import toml from 'toml';
 import * as fs from 'fs';

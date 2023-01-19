@@ -4,6 +4,7 @@
 # Dependencies
 - Solana Test Validator
 - Rust
+- Anchor
 - Wasm-pack
 - yarn
 - ts-node and typescript installed globally
@@ -11,14 +12,18 @@
 ## Clone Repo
 ```sh
 git clone git@github.com:spacemandev-git/dominari-arc.git
+anchor build
 ```
 
 ## Generating the WASM SDK
 
 ```sh
 cd dominari-sdk
-./bundler.sh
-./nodejs.sh
+./build.sh
+cd dominari-sdk-bundler
+yarn link
+cd ../../client-next-js
+yarn link dominari-sdk
 ```
 
 ## Solana Test Validator & Deploy

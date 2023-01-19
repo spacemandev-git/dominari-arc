@@ -224,31 +224,38 @@ const Settings = () => {
         })
         console.log("Config File Post Transform", configFile);
         
-        let ixGroup = [];
         // Create Game Instance
         const newInstanceId = randomU64();
         setInstance(newInstanceId);
-        const createGameInstanceIx = dominari.create_game_instance(privateKey.publicKey.toString(), newInstanceId, configFile.config);
-        ixGroup.push(ixWasmToJs(createGameInstanceIx));
+        const createGameInstanceIx = ixWasmToJs(dominari.create_game_instance(privateKey.publicKey.toString(), newInstanceId, configFile.config));
+        const tx = new VersionedTransaction(new TransactionMessage({
+            payerKey: privateKey.publicKey,
+            recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
+            instructions: [
+                createGameInstanceIx
+            ]
+        }).compileToLegacyMessage());
+        tx.sign([privateKey]);
+        const sig = await connection.sendRawTransaction(tx.serialize(), {skipPreflight: true});
+        console.log(sig);
+        
 
         // Init Map 
         const mapId = randomU64();
-        const initMapIx = dominari.init_map(privateKey.publicKey.toString(), newInstanceId, mapId, configFile.map.mapmeta.max_x, configFile.map.mapmeta.max_y);
-        ixGroup.push(ixWasmToJs(initMapIx));
+        const initMapIx = ixWasmToJs(dominari.init_map(privateKey.publicKey.toString(), newInstanceId, mapId, configFile.map.mapmeta.max_x, configFile.map.mapmeta.max_y));
+        const tx2 = new VersionedTransaction(new TransactionMessage({
+            payerKey: privateKey.publicKey,
+            recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
+            instructions: [
+                initMapIx
+            ]
+        }).compileToLegacyMessage());
+        tx2.sign([privateKey]);
+        const sig2 = await connection.sendRawTransaction(tx2.serialize(), {skipPreflight: true});
+        console.log(sig2);
+
+
         const recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-        ixGroup.forEach((ixG) => {
-            let tx = new Transaction();
-            tx.add(ixG);
-            tx.recentBlockhash = recentBlockhash,
-            tx.feePayer = privateKey.publicKey;
-            tx.sign(privateKey);
-            connection.sendRawTransaction(tx.serialize(), {skipPreflight: true}).then( (sig) => {
-                console.log("Create Instance & Map: ", sig);
-            })
-            
-        })
-
-
         let tileIxGroup = [];
         // Init Tiles
         for(let x=0; x<configFile.map.mapmeta.max_x; x++){
@@ -740,7 +747,7 @@ const MapPage = () => {
                 {player?.name && <PlayerFragment {...{player}}></PlayerFragment>}
                 {!player?.name && <CreatePlayerFragment {...{setPlayer}}></CreatePlayerFragment>}
             </div>
-            {showAddTroopModal && <AddTroopModal {...{setShowModal: setTroopModal, player: player, selectedTroopTile: selectedTroopTile}}></AddTroopModal>}
+            {player?.name && showAddTroopModal && <AddTroopModal {...{setShowModal: setTroopModal, player: player, selectedTroopTile: selectedTroopTile}}></AddTroopModal>}
             <div className="flex flex-row">
                 <Stage options={{height: 125*8 +5, width: 125*8 +5, backgroundColor: 0xFFFFFF}} ref={stageRef}>
                     <Container ref={containerRef}></Container>
