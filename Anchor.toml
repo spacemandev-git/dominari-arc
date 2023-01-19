@@ -4,6 +4,7 @@ skip-lint = false
 [programs.localnet]
 dominari = "3YdayPtujByJ1g1DWEUh7vpg78gZL49FWyD5rDGyof9T"
 registry = "H5mieGWWK6qukHoNzbR6ysLxReeQC4JHZcNM6JkPQnm3"
+nfti = "2LSc752NepdABk6TtHLTLFjVcUuYXkMj4dtaViuN8koZ"
 
 [registry]
 url = "https://api.apr.dev"

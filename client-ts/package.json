@@ -4,9 +4,12 @@
   "license": "MIT",
   "dependencies": {
     "@coral-xyz/anchor": "^0.26.0",
+    "@switchboard-xyz/solana.js": "^2.0.105",
     "@types/glob": "^8.0.0",
+    "@types/node-fetch": "2",
     "dominari-sdk": "../dominari-sdk/pkg",
     "glob": "^8.0.3",
+    "node-fetch": "2",
     "toml": "^3.0.0"
   }
 }
