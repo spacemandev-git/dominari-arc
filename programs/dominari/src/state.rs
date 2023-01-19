@@ -43,11 +43,12 @@ impl MaxSize for RelevantComponentKeys {
 pub struct GameConfig {
     pub max_players: u16,
     pub starting_cards: Vec<Pubkey>,
+    pub game_mode: GameMode,
 }
 
 impl DependentMaxSize for GameConfig {
     fn get_max_size(&self) -> u64 {
-        return 2 + 4 + (self.starting_cards.len() as u64 * 32_u64);
+        return 2 + 4 + (self.starting_cards.len() as u64 * 32_u64) + self.game_mode.get_max_size();
     }
 }
 
@@ -62,4 +63,35 @@ pub enum UseFeatureType {
     Portal,
     Attack,
     Loot,
+}
+
+#[cfg_attr(feature = "sdk", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorDeserialize, AnchorSerialize, Debug, Clone)]
+pub enum GameMode {
+    Sandbox,    // No End
+    KOTH {
+        max_score: u64,
+        score_interval_in_sec: u64,
+        score_per_interval: u64,
+        hill_tiles: Vec<u64> //tile ids
+    },       // King of the Hill, get Points for holding the Center
+    MaxScore,   // First one to reach specified score
+    Artifact    // Find an artifact and get to exit
+}
+
+impl DependentMaxSize for GameMode {
+    fn get_max_size(&self) -> u64 {
+        // For enums it's 1+Max Size of the largest Enum
+        match self {
+            GameMode::KOTH {
+                max_score: _,
+                score_interval_in_sec: _,
+                score_per_interval: _,
+                hill_tiles
+            } => {
+                return 1+8+8+8+(8 * hill_tiles.len() as u64);
+            },
+            _=> {return 1+1}
+        }
+    }
 }

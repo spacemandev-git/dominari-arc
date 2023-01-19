@@ -45,7 +45,7 @@ export interface DominariContextInterface {
 const Home: NextPage = () => {
     // state stuff
     const [nav, setNav] = useState(NavEnum.Settings);
-    const [rpc, setRPC] = useState("http://localhost:8899");
+    const [rpc, setRPC] = useState("https://api.devnet.solana.com");
     const [connection, setConnection] = useState(new Connection(rpc));
     const [dominari, setDominari] = useState(new Dominari(DOMINARI_PROGRAM_ID.toBase58()));
     const [instance, setInstance] = useState(BigInt("0"));
@@ -176,7 +176,7 @@ const Settings = () => {
         });
     }
     const airdrop = async () => {
-        await connection.requestAirdrop(privateKey.publicKey!, 100e9);
+        await connection.requestAirdrop(privateKey.publicKey!, 1e9);
         toast("Requested! Please wait a while to refresh...")
     }
 

@@ -6,7 +6,7 @@ import { ixPack, ixWasmToJs, randomU64 } from './util';
 import { Connection, Keypair, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 
-const CONNSTRING = "http://localhost:8899";
+const CONNSTRING = "http://api.devnet.solana.com"; //"http://localhost:8899";
 const connection = new Connection(CONNSTRING, "finalized");
 main();
 
