@@ -6,7 +6,8 @@ export interface ConfigFileInterface {
 //dominari::state::GameConfig
 interface GameConfig {
     max_players: number, //u16
-    starting_cards: string[] //Vec<Pubkey>    
+    starting_cards: string[], //Vec<Pubkey>
+    gamemode: any    
 }
 
 interface MapConfig {

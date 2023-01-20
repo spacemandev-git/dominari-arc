@@ -2,6 +2,19 @@
 max_players = 2
 starting_cards = ["Scout", "Scout", "Scout"]
 
+[config.gamemode.koth]
+max_score = 100
+score_interval_in_sec = 10
+score_per_interval = 5
+
+[[config.gamemode.koth.hill_tiles]]
+x=3
+y=3
+
+[[config.gamemode.koth.hill_tiles]]
+x=4
+y=4
+
 [map]
 cost_per_tile = 1000
 
