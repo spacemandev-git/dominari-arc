@@ -24,7 +24,6 @@ import { Event, EventData } from "@project-serum/anchor";
 //@ts-ignore
 import NoSSR from 'react-no-ssr';
 import { ConfigFileInterface } from "../util/interfaces";
-
 export const DominariContext = createContext({} as DominariContextInterface);
 export interface DominariContextInterface {
     connection: Connection,
@@ -45,7 +44,7 @@ export interface DominariContextInterface {
 const Home: NextPage = () => {
     // state stuff
     const [nav, setNav] = useState(NavEnum.Settings);
-    const [rpc, setRPC] = useState("https://api.devnet.solana.com");
+    const [rpc, setRPC] = useState("http://localhost:8899");
     const [connection, setConnection] = useState(new Connection(rpc));
     const [dominari, setDominari] = useState(new Dominari(DOMINARI_PROGRAM_ID.toBase58()));
     const [instance, setInstance] = useState(BigInt("0"));
@@ -222,8 +221,10 @@ const Settings = () => {
                 return dominari.get_blueprint_key(val);
             }
         })
-        console.log("Config File Post Transform", configFile);
-        
+
+        // Process Game Mode?
+
+
         // Create Game Instance
         const newInstanceId = randomU64();
         setInstance(newInstanceId);
@@ -238,7 +239,6 @@ const Settings = () => {
         tx.sign([privateKey]);
         const sig = await connection.sendRawTransaction(tx.serialize(), {skipPreflight: true});
         console.log(sig);
-        
 
         // Init Map 
         const mapId = randomU64();
@@ -300,7 +300,7 @@ const Settings = () => {
 
         await gamestate.load_state();
         setPlayPause(gamestate.get_play_phase());
-
+        
         
         let featureIxG = [];
         for(let feature of configFile.map.features) {
@@ -367,7 +367,7 @@ const Settings = () => {
                 <label>Public Key: {privateKey.publicKey.toString()}</label>
                 <label> Balance: {balance} Lamports ({balance/1e9} SOL)</label>
                 <button className="bg-slate-600" onClick={getBalance}>Refresh </button>
-                <button className="bg-slate-600" onClick={airdrop}>Airdrop 100 SOL</button>
+                <button className="bg-slate-600" onClick={airdrop}>Airdrop 1 SOL</button>
             </div>
             <div className="mt-12 flex flex-row gap-4">
                 <label>Game ID</label>
@@ -564,7 +564,9 @@ const MapPage = () => {
                             // Defending Unit on Tile X,Y Received Damage
                             toast(`Your ${defender.name} at (${defendingTile.x}, ${defendingTile.y}) took ${event.data.damage} damage from ${attacker.name}`, {icon: '☠'})
                         }
-                        
+                        break;
+                    case "ScoreChanged":
+                        console.log("CLOCKWORK WORKS!")
                         break;
                 }
             });
@@ -812,11 +814,41 @@ const PlayerFragment = ({player}: {player:WasmPlayer}) => {
             <p>{player.kills}</p>
             <label>Game State: {playpause}</label>
             <button onClick={async ()=>{
+                console.log("Current play/pause: ", playpause);
+                // if playpause == lobby, then also start the KOTH timer
+                if(playpause == "Lobby") {
+                    // Get Game Mode
+                    let gm = gamestate.get_game_mode();
+                    console.log("Game Mode: ", gm);
+
+                    if(gm.KOTH) {
+                        console.log("KOTH Kick Off");
+                        const kothKickOffIx= ixWasmToJs(
+                            dominari.koth_kickoff(
+                                privateKey.publicKey.toString(),
+                                gamestate.instance,
+                                BigInt(gamestate.get_tile_id(gm.KOTH.hill_tile[0], gm.KOTH.hill_tile[1]))
+                            )
+                        )
+                        const tx = new VersionedTransaction(new TransactionMessage({
+                            payerKey: privateKey.publicKey,
+                            recentBlockhash: (await connection.getLatestBlockhash()).blockhash,
+                            instructions: [
+                                kothKickOffIx
+                            ]
+                        }).compileToLegacyMessage());
+                        tx.sign([privateKey]);
+                        const sig = await connection.sendRawTransaction(tx.serialize(), {skipPreflight: true});
+                        console.log(sig);
+                    }
+                }
+
+
                 const changeStateIx = ixWasmToJs(dominari.change_game_state(
                     privateKey.publicKey.toString(),
                     gamestate.instance,
                     BigInt((gamestate.get_player_info(privateKey.publicKey.toString())).id),
-                    playpause == "Play" ? "Paused" : "Play",
+                    playpause == "Play" ? "Paused" : "Play", // toggle
                 ));
                 let tx = new Transaction();
                 tx.add(changeStateIx);
@@ -826,7 +858,7 @@ const PlayerFragment = ({player}: {player:WasmPlayer}) => {
                 tx.sign(privateKey);
                 connection.sendRawTransaction(tx.serialize(), {skipPreflight: true}).then((sig) => {
                     console.log("Game State Tx: ", sig);
-                })
+                });
             }}>Pause/Play</button>  
         </div>    
     )

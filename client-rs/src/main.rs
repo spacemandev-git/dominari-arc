@@ -1,7 +1,9 @@
 use dominari_sdk::gamestate::GameState;
+use anchor_lang::prelude::*;
+use clockwork_sdk::ThreadProgram;
 
-#[tokio::main]
-async fn main() {
+
+async fn main1() {
     let mut gamestate = GameState::new(
         "http://localhost:8899",
         "3YdayPtujByJ1g1DWEUh7vpg78gZL49FWyD5rDGyof9T",
@@ -15,3 +17,28 @@ async fn main() {
     println!("Active Component: {:?}", defender_active);
 }
 
+#[tokio::main]
+async fn main(){
+    const instance:u64 = 2553213103686576020;
+    const SEEDS_INSTANCEINDEX:&[u8;14] = b"instance_index";
+
+
+    let registry_instance = Pubkey::find_program_address(&[
+        core_ds::constant::SEEDS_REGISTRYINSTANCE_PREFIX,
+        registry::id().to_bytes().as_ref(),
+        instance.to_be_bytes().as_ref()
+    ], &core_ds::id()).0;
+
+    let instance_index = Pubkey::find_program_address(&[
+        SEEDS_INSTANCEINDEX,
+        registry_instance.to_bytes().as_ref(),
+    ], &dominari::ID).0;
+
+    let thread = Pubkey::find_program_address(&[
+        b"thread",
+       instance_index.key().as_ref(), 
+       instance.to_string().as_bytes(),
+    ], &ThreadProgram::id()).0;
+
+    println!("{}", thread.to_string());
+}

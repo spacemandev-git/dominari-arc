@@ -8,3 +8,8 @@ edition = "2021"
 [dependencies]
 dominari-sdk = { path = "../dominari-sdk" }
 tokio = { version = "1.23.0", features=["full"]}
+clockwork-sdk = "1.4.0"
+anchor-lang = "0.26.0"
+core_ds = { git="https://github.com/JumpCrypto/sol-arc", features=["cpi"] }
+registry = { path="../programs/registry", features=["no-entrypoint"]}
+dominari = { path="../programs/dominari", features=["no-entrypoint", "sdk"]}

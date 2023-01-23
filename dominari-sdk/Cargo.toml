@@ -22,3 +22,5 @@ core_ds = { git="https://github.com/JumpCrypto/sol-arc", features=["cpi"] }
 registry = { path="../programs/registry", features=["no-entrypoint"]}
 dominari = { path="../programs/dominari", features=["no-entrypoint", "sdk"]}
 bimap = {version="0.6.2", features=["serde"]}
+clockwork-sdk = "1.4.0"
+base64 = "0.21.0"

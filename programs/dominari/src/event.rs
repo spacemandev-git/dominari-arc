@@ -53,3 +53,10 @@ pub struct GameStateChanged {
     pub player: u64,
     pub new_state: PlayPhase
 }
+
+#[event]
+pub struct ScoreChanged {
+    pub instance: u64,
+    pub player: u64,
+    pub new_score: u64
+}

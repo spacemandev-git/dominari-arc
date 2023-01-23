@@ -1,9 +1,12 @@
 use anchor_lang::prelude::*;
+use clockwork_sdk::ThreadProgram;
+use clockwork_sdk::state::Thread;
 use core_ds::account::MaxSize;
 use std::collections::BTreeMap;
 use crate::{account::*, state::GameConfig};
 use crate::constant::*;
 use crate::state::{DependentMaxSize};
+use base64::{Engine as _, engine::general_purpose};
 
 use core_ds::{
     state::SerializedComponent, 
@@ -518,6 +521,132 @@ pub struct ReclaimSol<'info> {
 
     // CoreDs
 }
+
+
+
+/****** GAME MODE CRANK CONTEXTS */
+/*** KOTH */
+// KOTH Kick Off
+#[derive(Accounts)]
+pub struct KOTHKickoff<'info> {
+    #[account(
+        mut,
+        address = Thread::pubkey(
+            instance_index.key(),
+            general_purpose::STANDARD_NO_PAD.encode(registry_instance.instance.to_be_bytes())
+        )
+    )]
+    pub thread: SystemAccount<'info>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(address = ThreadProgram::id())]
+    pub thread_program: Program<'info, ThreadProgram>,
+    pub system_program: Program<'info, System>,
+
+    pub tile: Box<Account<'info, Entity>>,
+    pub config: Box<Account<'info, Config>>,
+    #[account(
+        mut,
+        seeds=[
+            SEEDS_INSTANCEINDEX,
+            registry_instance.key().as_ref()
+        ],
+        bump,
+    )]
+    pub instance_index: Box<Account<'info, InstanceIndex>>,    
+    pub registry_instance: Account<'info, RegistryInstance>,
+}
+
+// GetTileOccupant
+#[derive(Accounts)]
+pub struct KOTHGetTileOccupant<'info> {
+    pub tile: Box<Account<'info, Entity>>,
+
+    //Action Bundle
+    #[account(
+        seeds=[SEEDS_ABSIGNER],
+        bump,
+    )]
+    pub config: Box<Account<'info, Config>>,
+    pub instance_index: Box<Account<'info, InstanceIndex>>,    
+
+    //Registry
+    #[account(
+        seeds = [SEEDS_REGISTRYSIGNER.as_slice()],
+        bump,
+        seeds::program = registry_instance.registry.key()
+    )]
+    pub registry_config: Account<'info, RegistryConfig>,
+    pub registry_program: Program<'info, Registry>,
+    pub ab_registration: Box<Account<'info, ActionBundleRegistration>>,
+
+    //CoreDs
+    pub coreds: Program<'info, CoreDs>, 
+    pub registry_instance: Account<'info, RegistryInstance>,
+}
+
+// GetOccupantOwner
+#[derive(Accounts)]
+pub struct KOTHGetOccupantOwner<'info> {
+    pub tile: Box<Account<'info, Entity>>,
+    pub occupant: Box<Account<'info, Entity>>,
+
+    //Action Bundle
+    #[account(
+        seeds=[SEEDS_ABSIGNER],
+        bump,
+    )]
+    pub config: Box<Account<'info, Config>>,
+    pub instance_index: Box<Account<'info, InstanceIndex>>,    
+
+    //Registry
+    #[account(
+        seeds = [SEEDS_REGISTRYSIGNER.as_slice()],
+        bump,
+        seeds::program = registry_instance.registry.key()
+    )]
+    pub registry_config: Account<'info, RegistryConfig>,
+    pub registry_program: Program<'info, Registry>,
+    pub ab_registration: Box<Account<'info, ActionBundleRegistration>>,
+
+    //CoreDs
+    pub coreds: Program<'info, CoreDs>, 
+    pub registry_instance: Account<'info, RegistryInstance>,
+}
+
+// GrantScore
+#[derive(Accounts)]
+pub struct KOTHGrantScore<'info> {
+    pub tile: Box<Account<'info, Entity>>,
+    pub occupant: Box<Account<'info, Entity>>,
+    #[account(mut)]
+    pub player: Box<Account<'info, Entity>>,
+
+    //Action Bundle
+    #[account(
+        seeds=[SEEDS_ABSIGNER],
+        bump,
+    )]
+    pub config: Box<Account<'info, Config>>,
+    #[account(mut)]
+    pub instance_index: Box<Account<'info, InstanceIndex>>,    
+
+    //Registry
+    #[account(
+        seeds = [SEEDS_REGISTRYSIGNER.as_slice()],
+        bump,
+        seeds::program = registry_instance.registry.key()
+    )]
+    pub registry_config: Account<'info, RegistryConfig>,
+    pub registry_program: Program<'info, Registry>,
+    pub ab_registration: Box<Account<'info, ActionBundleRegistration>>,
+
+    //CoreDs
+    pub coreds: Program<'info, CoreDs>, 
+    pub registry_instance: Account<'info, RegistryInstance>,
+}
+
+/****** GAME MODE CRANK CONTEXTS */
 
 
 /********************************************UTIL Fns */

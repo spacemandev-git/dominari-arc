@@ -96,7 +96,7 @@ pub struct RegisterAB <'info> {
         payer=payer,
         seeds=[
             SEEDS_ACTIONBUNDLEREGISTRATION,
-            action_bundle.key().as_ref()
+            action_bundle.key().as_ref() // PDA Signer for AB
         ],
         bump,
         space=8+ActionBundleRegistration::get_max_size() as usize

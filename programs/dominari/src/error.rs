@@ -59,3 +59,15 @@ pub enum ComponentErrors {
     #[msg("Invalid Location")]
     InvalidLocation,
 }
+
+#[error_code]
+pub enum GameModeErrors {
+    #[msg("Invalid Accounts")]
+    InvalidAccounts,
+
+    #[msg("KOTH Crank Time Invalid")]
+    InvalidCrankTime,
+
+    #[msg("Invalid Time")]
+    InvalidTime,
+}

@@ -315,6 +315,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
+name = "base64"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4a4ddaa51a5bc52a6948f74c06d20aaaddb71924eab79b8c97a8c556e942d6a"
+
+[[package]]
 name = "bimap"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -569,8 +575,74 @@ dependencies = [
 name = "client-rs"
 version = "0.1.0"
 dependencies = [
+ "anchor-lang",
+ "clockwork-sdk",
+ "core_ds",
+ "dominari",
  "dominari-sdk",
+ "registry",
  "tokio",
+]
+
+[[package]]
+name = "clockwork-cron"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbc3881dddc06e5186ef288dba9dfce9e44bb00158a5629c32327b5c5fb60e95"
+dependencies = [
+ "chrono",
+ "nom",
+ "once_cell",
+]
+
+[[package]]
+name = "clockwork-network-program"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a281044d28fe35047dec60cd55cf2000307132ad54c68f6b14952c90eaa01a73"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "clockwork-utils",
+]
+
+[[package]]
+name = "clockwork-sdk"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5cb27a6546c10877fb0b309bb94f23fd13903d73ba793dda8b4acab4b70fc286"
+dependencies = [
+ "anchor-lang",
+ "chrono",
+ "clockwork-thread-program",
+ "nom",
+ "once_cell",
+]
+
+[[package]]
+name = "clockwork-thread-program"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6aa4a3843764e300bd15aefb83b33fbd590de3d0a5ad0b934827833837d2e9f6"
+dependencies = [
+ "anchor-lang",
+ "chrono",
+ "clockwork-cron",
+ "clockwork-network-program",
+ "clockwork-utils",
+ "static-pubkey",
+ "version",
+]
+
+[[package]]
+name = "clockwork-utils"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80a384f1b7b90796c3a3ad3852b4eb56cc6b3f40a8b15fa4d05688e1a034d538"
+dependencies = [
+ "anchor-lang",
+ "base64 0.13.1",
+ "static-pubkey",
 ]
 
 [[package]]
@@ -824,6 +896,8 @@ name = "dominari"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "base64 0.21.0",
+ "clockwork-sdk",
  "core_ds",
  "registry",
  "serde",
@@ -834,7 +908,9 @@ name = "dominari-sdk"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "base64 0.21.0",
  "bimap",
+ "clockwork-sdk",
  "console_error_panic_hook",
  "core_ds",
  "dominari",
@@ -1543,6 +1619,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a60c7ce501c71e03a9c9c0d35b861413ae925bd979cc7a4e30d060069aaac8d"
 
 [[package]]
+name = "minimal-lexical"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
 name = "mio"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1570,6 +1652,16 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "tempfile",
+]
+
+[[package]]
+name = "nom"
+version = "7.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
+dependencies = [
+ "memchr",
+ "minimal-lexical",
 ]
 
 [[package]]
@@ -2579,6 +2671,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "static-pubkey"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0547d5945c93f55e1b18bf2a67d1a3d0548561f2687645b22c1c1d4fbb9a8e90"
+dependencies = [
+ "bs58 0.4.0",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2894,6 +2998,12 @@ name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+
+[[package]]
+name = "version"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a449064fee414fcc201356a3e6c1510f6c8829ed28bb06b91c54ebe208ce065"
 
 [[package]]
 name = "version_check"

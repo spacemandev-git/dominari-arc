@@ -71,25 +71,30 @@ pub enum GameMode {
     Sandbox,    // No End
     KOTH {
         max_score: u64,
-        score_interval_in_sec: u64,
+        last_score_grant: u64, //slot score was last cranked
+        score_interval_in_slots: u64,
         score_per_interval: u64,
-        hill_tiles: Vec<u64> //tile ids
+        hill_tile: (u8,u8) //tile coordinates because tile ids aren't initialized at begining of game
     },       // King of the Hill, get Points for holding the Center
     MaxScore,   // First one to reach specified score
     Artifact    // Find an artifact and get to exit
 }
 
+
+//TODO: THis should not be dependant on which game mode is picked, 
+// but should return the max size of the largerst enum always
 impl DependentMaxSize for GameMode {
     fn get_max_size(&self) -> u64 {
         // For enums it's 1+Max Size of the largest Enum
         match self {
             GameMode::KOTH {
                 max_score: _,
-                score_interval_in_sec: _,
+                last_score_grant: _,
+                score_interval_in_slots: _,
                 score_per_interval: _,
-                hill_tiles
+                hill_tile: _,
             } => {
-                return 1+8+8+8+(8 * hill_tiles.len() as u64);
+                return 1+8+8+8+8+3;
             },
             _=> {return 1+1}
         }

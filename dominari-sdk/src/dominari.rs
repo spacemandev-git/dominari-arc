@@ -1,14 +1,18 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction, InstructionData};
+use clockwork_sdk::ThreadProgram;
+use clockwork_sdk::state::Thread;
 use core_ds::{state::SerializedComponent, constant::SEEDS_ENTITY_PREFIX};
 use core_ds::account::MaxSize;
-use dominari::state::UseFeatureType;
+use dominari::state::{UseFeatureType, GameMode};
 use dominari::{component::*, constant::{SEEDS_BLUEPRINT, SEEDS_INSTANCEINDEX}, state::GameConfig};
 use wasm_bindgen::{prelude::*, throw_str};
+use web_sys::console;
 use std::{str::FromStr, collections::BTreeMap};
 use anchor_lang::system_program::ID as system_program;
 use crate::coreds::get_keys_from_id;
-use crate::wasm_wrappers::GameConfigFile;
+use crate::wasm_wrappers::{GameConfigFile, WasmGameMode};
 use crate::{component_schemas::ComponentIndex, blueprints::BlueprintConfig};
+use base64::{Engine as _, engine::general_purpose};
 
 #[wasm_bindgen]
 #[derive(Default)]
@@ -230,7 +234,32 @@ impl Dominari {
     pub fn create_game_instance(&self, payer:&str, instance: u64, game_config_json: JsValue) -> JsValue {
         let game_config_file:GameConfigFile = serde_wasm_bindgen::from_value(game_config_json).unwrap();
         let starting_cards_keys:Vec<Pubkey> = game_config_file.starting_cards.iter().map(|keystr: &String| {Pubkey::from_str(keystr.as_str()).unwrap()}).collect();
-        let game_config = GameConfig { max_players: game_config_file.max_players, starting_cards: starting_cards_keys };
+        let gamemode;
+        match game_config_file.gamemode {
+            WasmGameMode::KOTH { 
+                max_score, 
+                last_score_grant, 
+                score_interval_in_slots, 
+                score_per_interval, 
+                hill_tile_x, 
+                hill_tile_y
+            } => {
+                gamemode = GameMode::KOTH { 
+                    max_score,
+                    last_score_grant, 
+                    score_interval_in_slots, 
+                    score_per_interval, 
+                    hill_tile: (hill_tile_x, hill_tile_y)
+                };
+            },
+        }
+        
+        let game_config = GameConfig { 
+            max_players: 
+            game_config_file.max_players, 
+            starting_cards: starting_cards_keys,
+            game_mode: gamemode,
+        };
 
         let payer = Pubkey::from_str(payer).unwrap();
         let config = Pubkey::find_program_address(&[
@@ -833,6 +862,48 @@ impl Dominari {
         serde_wasm_bindgen::to_value(&ix).unwrap()
     }
 
+    /**** Game Modes */
+    pub fn koth_kickoff(&self, payer: &str, instance:u64, tile_id:u64) -> JsValue {
+        let payer = Pubkey::from_str(payer).unwrap();
+        let config = Pubkey::find_program_address(&[
+            dominari::constant::SEEDS_ABSIGNER
+        ], &self.program_id).0;
+        
+        let registry_instance = Pubkey::find_program_address(&[
+            core_ds::constant::SEEDS_REGISTRYINSTANCE_PREFIX,
+            registry::id().to_bytes().as_ref(),
+            instance.to_be_bytes().as_ref()
+        ], &core_ds::id()).0;
+
+        let instance_index = Pubkey::find_program_address(&[
+            SEEDS_INSTANCEINDEX,
+            registry_instance.to_bytes().as_ref(),
+        ], &self.program_id).0;
+
+        let thread = Thread::pubkey(
+            instance_index.key(),
+            general_purpose::STANDARD_NO_PAD.encode(instance.to_be_bytes())
+        );
+
+        let tile = get_keys_from_id(registry_instance, vec![tile_id])[0];
+
+        let ix = Instruction {
+            program_id: self.program_id,
+            accounts: dominari::accounts::KOTHKickoff {
+                payer,
+                system_program,
+                config,
+                instance_index,
+                thread,
+                thread_program: ThreadProgram::id(),
+                tile,
+                registry_instance,
+            }.to_account_metas(Some(true)),
+            data: dominari::instruction::KothKickoff {}.data()
+        };
+
+        serde_wasm_bindgen::to_value(&ix).unwrap()
+    }
 }   
 
 /*

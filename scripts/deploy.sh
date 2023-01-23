@@ -1,5 +1,5 @@
 #!/usr/bin/env bash 
-cd ../../../sol-arc
+cd ../../../jumpcrypto-solarc
 anchor build
 
 # Deploy Universe

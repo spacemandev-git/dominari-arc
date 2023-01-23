@@ -7,3 +7,5 @@ pub const SEEDS_ABSIGNER:&[u8;9] = b"ab_signer";
 pub const SEEDS_INSTANCEINDEX:&[u8;14] = b"instance_index";
 pub const SEEDS_BLUEPRINT:&[u8;9] = b"blueprint";
 pub const ENTITY_ID_SIZE: usize = 8;
+pub const CLOCKWORK_CRANK_FEE: u64 = 1000; // 1k Lamports
+pub const SOLANA_TX_FEE: u64 = 50000; // 50k Lamports

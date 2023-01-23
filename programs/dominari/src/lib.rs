@@ -1,6 +1,13 @@
 use anchor_lang::prelude::*;
+use anchor_lang::InstructionData;
 use anchor_lang::solana_program::hash::*;
+use anchor_lang::solana_program::instruction::Instruction;
 use std::collections::BTreeMap;
+use clockwork_sdk::{
+    self,
+    state::{ThreadResponse, Trigger},
+    cpi::{ThreadCreate, thread_create},
+};
 
 pub mod account;
 pub mod context;
@@ -299,6 +306,7 @@ pub mod dominari {
         // Set up Instance Index
         ctx.accounts.instance_index.config = game_config; 
         ctx.accounts.instance_index.authority = ctx.accounts.payer.key();
+
         Ok(())
     }
 
@@ -379,7 +387,6 @@ pub mod dominari {
         }
 
         ctx.accounts.instance_index.play_phase = game_state.clone();
-
         emit!(GameStateChanged {
             instance: ctx.accounts.registry_instance.instance,
             player: ctx.accounts.player.entity_id,
@@ -912,6 +919,323 @@ pub mod dominari {
         Ok(())
     }
     */
+
+    /****** GAME MODE CRANKS */
+
+    /***** KOTH */
+    // KickOffKOTH
+    pub fn koth_kickoff(ctx:Context<KOTHKickoff>) -> Result<()> {
+        let config = ctx.accounts.config.key();
+        let reference = &ctx.accounts.config.components;
+        // accounts
+        let registry_config = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_REGISTRYSIGNER
+        ], &registry::id()).0;
+
+        let ab_registration = Pubkey::find_program_address(&[
+            registry::constant::SEEDS_ACTIONBUNDLEREGISTRATION,
+            config.key().as_ref(),
+        ], &crate::ID).0;
+
+        // CHECK tile passed in is actually the hill tile
+        if let GameMode::KOTH { 
+            max_score: _,
+            last_score_grant: _, 
+            score_interval_in_slots: _, 
+            score_per_interval: _, 
+            hill_tile
+        } = ctx.accounts.instance_index.config.game_mode {
+            let location_c = ctx.accounts.tile.components.get(&reference.location).unwrap();
+            let location = ComponentLocation::try_from_slice(&location_c.data.as_slice()).unwrap();
+            if location.x != hill_tile.0 || location.y != hill_tile.1 {
+                return err!(GameModeErrors::InvalidAccounts)
+            }
+        }
+
+        // KOTH Get Tile Occupant Ix
+        let koth_ix = Instruction {
+            program_id: crate::ID,
+            accounts: crate::accounts::KOTHGetTileOccupant {
+                tile: ctx.accounts.tile.key(),
+                config,
+                instance_index: ctx.accounts.instance_index.key(),
+                registry_config,
+                registry_program: registry::id(),
+                ab_registration,
+                coreds: core_ds::id(),
+                registry_instance: ctx.accounts.registry_instance.key(),
+            }.to_account_metas(Some(true)),
+            data: crate::instruction::KothGetTileOccupant {}.data()
+        };
+        
+        
+        // Clockwork Thread CTX
+        let ri_key = &ctx.accounts.registry_instance.key();
+        let instance_index_seeds:&[&[u8]] = &[
+            SEEDS_INSTANCEINDEX,
+            ri_key.as_ref(),
+            &[*ctx.bumps.get("instance_index").unwrap()]
+        ];
+        let signer_seeds = &[instance_index_seeds];
+
+
+        let clockwork_ctx = CpiContext::new_with_signer(
+            ctx.accounts.thread_program.to_account_info(),
+            ThreadCreate {
+                authority: ctx.accounts.instance_index.to_account_info(),
+                payer: ctx.accounts.payer.to_account_info(),
+                system_program: ctx.accounts.system_program.to_account_info(),
+                thread: ctx.accounts.thread.to_account_info(),
+            },
+            signer_seeds,
+        );
+
+        if let GameMode::KOTH { 
+            max_score,
+            last_score_grant: _, 
+            score_interval_in_slots, 
+            score_per_interval, 
+            hill_tile,
+        } = ctx.accounts.instance_index.config.game_mode {
+            let total_seconds = ( score_interval_in_slots as f64 / 2.5 ) as u64; // 2.5 Slots per second
+            if total_seconds > 518400 || total_seconds < 60{ // 6 days
+                return err!(GameModeErrors::InvalidTime)
+            }
+
+            //let seconds = (total_seconds as f64 % 60_f64) as u64; // rounded down to the nearest minute cause cron doesn't do seconds
+            let minutes = ((total_seconds as f64 / 60_f64) % 60_f64) as u64;
+            let hours = (((total_seconds as f64 /60_f64)/60_f64)/60_f64) as u64;
+            
+            let cron = format!("*/{} {} * * * * *", minutes, hours);
+
+            // Create the Thread
+            thread_create(
+                clockwork_ctx,
+                ctx.accounts.registry_instance.key().to_string(),
+                koth_ix.into(),
+                Trigger::Cron {
+                    schedule: cron,
+                    skippable: false
+                }
+            )?;
+
+            // Sol Transfer into that Thread
+            let amount = (SOLANA_TX_FEE + CLOCKWORK_CRANK_FEE) * (max_score/score_per_interval);
+
+            let ix = anchor_lang::solana_program::system_instruction::transfer(
+                &ctx.accounts.payer.key(),
+                &ctx.accounts.thread.key(),
+                amount,
+            );
+            anchor_lang::solana_program::program::invoke(
+                &ix,
+                &[
+                    ctx.accounts.payer.to_account_info(),
+                    ctx.accounts.thread.to_account_info(),
+                ],
+            )?;
+
+            // set last score grant to now
+            let instance_index = &mut ctx.accounts.instance_index;
+            let clock = Clock::get().unwrap();
+            instance_index.config.game_mode = GameMode::KOTH { 
+                max_score, 
+                last_score_grant: clock.slot, 
+                score_interval_in_slots, 
+                score_per_interval, 
+                hill_tile
+            }
+        }
+        Ok(())
+    }
+
+
+    //GetTileOccupant
+    pub fn koth_get_tile_occupant(ctx: Context<KOTHGetTileOccupant>) -> Result<ThreadResponse> {
+        let reference = &ctx.accounts.config.components;
+        let tile  = &ctx.accounts.tile;
+
+        let occupant_c = tile.components.get(&reference.occupant).unwrap();
+        let occupant = ComponentOccupant::try_from_slice(&occupant_c.data.as_slice()).unwrap();
+
+        let unit_id = occupant.occupant_id;
+
+        if unit_id.is_none() {
+            //no unit occupaies the tile,
+            // Exit early
+            Ok(ThreadResponse::default())
+        } else {
+            // Unit exists, find the unit owner
+
+            let unit_key = get_entity_key(unit_id.unwrap(), ctx.accounts.registry_instance.key());
+
+            let next_ix = Instruction {
+                program_id: crate::ID,
+                accounts: crate::accounts::KOTHGetOccupantOwner {
+                    tile: tile.key(),
+                    occupant: unit_key,
+                    config: ctx.accounts.config.key(),
+                    ab_registration: ctx.accounts.ab_registration.key(),
+                    instance_index: ctx.accounts.instance_index.key(),
+                    registry_config: ctx.accounts.registry_config.key(),
+                    registry_program: ctx.accounts.registry_program.key(),
+                    coreds: ctx.accounts.coreds.key(),
+                    registry_instance: ctx.accounts.registry_instance.key(),
+                }.to_account_metas(None),
+                data: crate::instruction::KothGetOccupantOwner {}.data()
+            };
+
+            Ok(ThreadResponse {
+                kickoff_instruction: None,
+                next_instruction: Some(next_ix.into()),
+            })
+        }
+    }
+
+    //GetOccupantOwner
+    pub fn koth_get_occupant_owner(ctx: Context<KOTHGetOccupantOwner>) -> Result<ThreadResponse> {
+        let reference = &ctx.accounts.config.components;
+        let occupant  = &ctx.accounts.occupant;
+
+        let owner_c = occupant.components.get(&reference.owner).unwrap();
+        let owner = ComponentOwner::try_from_slice(&owner_c.data.as_slice()).unwrap();
+
+        let owner = owner.player.unwrap();
+
+        let owner_key = get_entity_key(owner, ctx.accounts.registry_instance.key());
+
+        let next_ix = Instruction {
+            program_id: crate::ID,
+            accounts: crate::accounts::KOTHGrantScore {
+                tile: ctx.accounts.tile.key(),
+                occupant: occupant.key(),
+                player: owner_key,
+                config: ctx.accounts.config.key(),
+                ab_registration: ctx.accounts.ab_registration.key(),
+                instance_index: ctx.accounts.instance_index.key(),
+                registry_config: ctx.accounts.registry_config.key(),
+                registry_program: ctx.accounts.registry_program.key(),
+                coreds: ctx.accounts.coreds.key(),
+                registry_instance: ctx.accounts.registry_instance.key(),
+            }.to_account_metas(None),
+            data: crate::instruction::KothGetOccupantOwner {}.data()
+        };
+
+        Ok(ThreadResponse {
+            kickoff_instruction: None,
+            next_instruction: Some(next_ix.into()),
+        })
+        
+    }
+
+    //UpdateScore
+    pub fn koth_grant_score(ctx: Context<KOTHGrantScore>) -> Result<()> {
+        let reference = &ctx.accounts.config.components;
+
+        // Check that the player ID is one of the ones in the Instance Index passed in
+        if !ctx.accounts.instance_index.players.contains(&ctx.accounts.player.entity_id) {
+            return err!(GameModeErrors::InvalidAccounts)
+        }
+
+        // recheck that tile x,y is same as game config
+        match ctx.accounts.instance_index.config.game_mode {
+            GameMode::KOTH { 
+                max_score:_, 
+                last_score_grant, 
+                score_interval_in_slots, 
+                score_per_interval: _, 
+                hill_tile 
+            } => {
+                let location_c = ctx.accounts.tile.components.get(&reference.location).unwrap();
+                let location = ComponentLocation::try_from_slice(&location_c.data.as_slice()).unwrap();
+                if location.x != hill_tile.0 || location.y != hill_tile.1 {
+                    return err!(GameModeErrors::InvalidAccounts)
+                }
+                // Check that enough time has passed that the crank should be turned (no "eager" cranking by non clockwork accounts)
+                let clock = Clock::get().unwrap();
+                if (last_score_grant + score_interval_in_slots) < clock.slot {
+                    return err!(GameModeErrors::InvalidCrankTime)
+                }
+            },
+            _=> {} //should never happen
+        }
+
+        // recheck that the tile and player components match up 
+        let occupant_c = ctx.accounts.tile.components.get(&reference.occupant).unwrap();
+        let occupant = ComponentOccupant::try_from_slice(&occupant_c.data.as_slice()).unwrap();
+        let unit_id = occupant.occupant_id;
+        if unit_id.is_none() || ctx.accounts.occupant.entity_id != unit_id.unwrap() {
+            return err!(GameModeErrors::InvalidAccounts)
+        }
+
+        let owner_c = ctx.accounts.occupant.components.get(&reference.owner).unwrap();
+        let owner = ComponentOwner::try_from_slice(&owner_c.data.as_slice()).unwrap();
+        if owner.player.unwrap() != ctx.accounts.player.entity_id {
+            return err!(GameModeErrors::InvalidAccounts)
+        }
+
+        // All checks passed
+        // Grant Score
+        let player_stats_c = ctx.accounts.player.components.get(&reference.player_stats).unwrap();
+        let mut player_stats = ComponentPlayerStats::try_from_slice(&player_stats_c.data.as_slice()).unwrap();
+        match ctx.accounts.instance_index.config.game_mode {
+            GameMode::KOTH { 
+                max_score, 
+                last_score_grant:_, 
+                score_interval_in_slots, 
+                score_per_interval, 
+                hill_tile 
+            } => {
+                player_stats.score += score_per_interval;
+
+                let config_seeds:&[&[u8]] = &[
+                    SEEDS_ABSIGNER,
+                    &[*ctx.bumps.get("config").unwrap()]
+                ];
+                let signer_seeds = &[config_seeds];
+
+
+                let modify_player_stats_ctx = CpiContext::new_with_signer(
+                    ctx.accounts.registry_program.to_account_info(),
+                    registry::cpi::accounts::ModifyComponent {
+                        registry_config: ctx.accounts.registry_config.to_account_info(),
+                        entity: ctx.accounts.player.to_account_info(),
+                        action_bundle: ctx.accounts.config.to_account_info(),
+                        action_bundle_registration: ctx.accounts.ab_registration.to_account_info(),
+                        core_ds: ctx.accounts.coreds.to_account_info(),
+                    },
+                    signer_seeds
+                );
+                registry::cpi::req_modify_component(modify_player_stats_ctx, vec![
+                        (reference.player_stats.key(), player_stats.try_to_vec().unwrap()),
+                    ])?;
+
+                // Set Last Score Grant Value
+                let instance_index = &mut ctx.accounts.instance_index;
+                let clock = Clock::get().unwrap();
+                instance_index.config.game_mode = GameMode::KOTH { 
+                    max_score, 
+                    last_score_grant: clock.slot, 
+                    score_interval_in_slots, 
+                    score_per_interval, 
+                    hill_tile
+                }
+            },
+            _=> {} //should never happen
+        }
+
+
+        emit!(ScoreChanged { 
+            instance: ctx.accounts.registry_instance.instance, 
+            player: ctx.accounts.player.entity_id, 
+            new_score: player_stats.score
+        });
+
+        Ok(())
+    }
+
+    /**** /KOTH */
+
 }
 
 pub fn get_random_u64(max: u64) -> u64 {
@@ -920,4 +1244,12 @@ pub fn get_random_u64(max: u64) -> u64 {
     let num: u64 = u64::from_be_bytes(slice.try_into().unwrap());
     let target = num/(u64::MAX/max);
     return target;
+}
+
+pub fn get_entity_key(id: u64, registry_instance: Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[
+        core_ds::constant::SEEDS_ENTITY_PREFIX,
+        id.to_be_bytes().as_ref(),
+        registry_instance.key().as_ref()
+    ], &core_ds::id()).0
 }

@@ -5,6 +5,7 @@ use solana_client_wasm::WasmClient;
 use dominari::account::{InstanceIndex, PlayPhase};
 use core_ds::account::Entity;
 use dominari::component::*;
+use dominari::state::GameMode;
 use crate::{component_schemas::ComponentIndex, coreds::{get_registry_instance, get_keys_from_id}, wasm_wrappers::{WasmTile, WasmFeature, WasmTroop, WasmPlayer}, blueprints::BlueprintIndex};
 //use web_sys::console;
 
@@ -182,6 +183,27 @@ impl GameState{
             PlayPhase::Finished => return String::from("Finished"),
         }
     }
+
+    pub fn get_game_mode(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.index.as_ref().unwrap().config.game_mode).unwrap()
+
+        /*        
+        match self.index.as_ref().unwrap().config.game_mode {
+            GameMode::KOTH { 
+                max_score:_, 
+                last_score_grant:_, 
+                score_interval_in_slots:_, 
+                score_per_interval:_, 
+                hill_tile:_
+            } => {
+                return "KOTH".to_string();
+            },
+            _ => {
+                return "NOT IMPLEMENTED YET".to_string();
+            }
+        }
+        */
+    }
 }
 
 /**
@@ -244,38 +266,6 @@ impl GameState {
 
         if troop.is_some() {
             tile.troop = Some(self.get_troop_info(troop.unwrap()));
-            /*
-            let t_id = troop.unwrap();
-            let troop_metadata = self.get_entity_metadata(&t_id).unwrap();
-            let troop_player = self.get_entity_owner(&t_id).unwrap();
-            let damage = self.get_entity_damage(&t_id).unwrap();
-            let health = self.get_entity_health(&t_id).unwrap();
-            let class = self.get_entity_troop_class(&t_id).unwrap();
-            let range = self.get_entity_range(&t_id).unwrap();
-            let last_used = self.get_entity_last_used(&t_id).unwrap();
-            let value = self.get_entity_value(&t_id).unwrap();
-
-
-            tile.troop = Some(WasmTroop {
-                name: troop_metadata.name,
-                id: t_id.to_string(),
-                troop_owner_player_id: troop_player.player.unwrap().to_string(),
-                troop_owner_player_key: troop_player.owner.unwrap().to_string(),
-                min_damage: damage.min_damage.to_string(),
-                max_damage: damage.max_damage.to_string(),
-                bonus_infantry: damage.bonus_infantry.to_string(),
-                bonus_armor: damage.bonus_armor.to_string(),
-                bonus_aircraft: damage.bonus_aircraft.to_string(),
-                bonus_feature: damage.bonus_feature.to_string(),
-                health: health.health.to_string(),
-                class: class.class,
-                movement: range.movement,
-                attack_range: range.attack_range,
-                last_used: last_used.last_used.to_string(),
-                recovery: last_used.recovery.to_string(),
-                value: value.value.to_string()
-            })
-            */
         }
         tile
     }

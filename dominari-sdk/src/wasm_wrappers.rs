@@ -11,6 +11,19 @@ use serde::{Serialize, Deserialize};
 pub struct GameConfigFile {
     pub max_players:u16,
     pub starting_cards: Vec<String>,
+    pub gamemode: WasmGameMode,
+}
+
+#[derive(Deserialize)]
+pub enum WasmGameMode {
+    KOTH {
+        max_score: u64,
+        last_score_grant: u64,
+        score_interval_in_slots: u64,
+        score_per_interval: u64,
+        hill_tile_x: u8,
+        hill_tile_y: u8,
+    }
 }
 
 #[derive(Serialize, Deserialize)]
