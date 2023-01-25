@@ -277,11 +277,12 @@ impl MaxSize for ComponentCost {
 #[cfg_attr(feature = "sdk", derive(serde::Serialize, serde::Deserialize))]
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone)]
 pub struct ComponentOffchainMetadata{
+    pub image: String,
     pub link: String,
 }
 
 impl MaxSize for ComponentOffchainMetadata {
     fn get_max_size() -> u64 {
-        return STRING_MAX_SIZE*2 //can be 2 times regular string for long url links
+        return 2*(STRING_MAX_SIZE*2) //can be 2 times regular string for long url links
     }
 }
