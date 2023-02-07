@@ -9,9 +9,13 @@
 - yarn
 - ts-node and typescript installed globally
 
-## Clone Repo
+## Clone Repos
+`scripts/deploy.sh` assumes dominary-arc and sol-arc are in the same directory.
+
 ```sh
 git clone git@github.com:spacemandev-git/dominari-arc.git
+git clone git@github.com:JumpCrypto/sol-arc.git
+cd dominari-arc
 anchor build
 ```
 

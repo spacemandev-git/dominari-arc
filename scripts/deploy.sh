@@ -1,11 +1,13 @@
 #!/usr/bin/env bash 
-cd ../../../jumpcrypto-solarc
+
+# assumes sol-arc and dominari-arc are in same directory
+cd ../../sol-arc
 anchor build
 
 # Deploy Universe
 solana program deploy --program-id localhost_keypairs/core-ds-keypair.json target/deploy/core_ds.so
 
-cd ../dominari/arc2
+cd ../dominari-arc
 
 anchor build
 # Deploy Registry
