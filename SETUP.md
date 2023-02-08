@@ -33,12 +33,11 @@ yarn link dominari-sdk
 ## Solana Test Validator & Deploy
 ```sh
 # Run this in a seperate terminal so it can run
-solana-test-validator
+solana-test-validator --bpf-program GN5Ww5qa8ej4evFCJxMhV6AFEPKhD1Drdu8qYYptVgDJ deps/core_ds.so
 ```
 
 ```sh 
-cd ../scripts
-./deploy.sh
+./scripts/deploy.sh
 ```
 
 
