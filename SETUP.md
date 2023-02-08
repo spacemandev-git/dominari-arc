@@ -46,7 +46,8 @@ Use a private key that has tokens on your local test validator (usually ~/.confi
 
 ```sh
 cd ./client-ts
-ts-node admin.ts <privateKey> H5mieGWWK6qukHoNzbR6ysLxReeQC4JHZcNM6JkPQnm3 3YdayPtujByJ1g1DWEUh7vpg78gZL49FWyD5rDGyof9T
+yarn install
+yarn ts-node admin.ts <path_to_private_key> H5mieGWWK6qukHoNzbR6ysLxReeQC4JHZcNM6JkPQnm3 3YdayPtujByJ1g1DWEUh7vpg78gZL49FWyD5rDGyof9T
 ```
 
 ## Get into the Game

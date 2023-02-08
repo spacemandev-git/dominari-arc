@@ -4,11 +4,32 @@ import toml from 'toml';
 import * as fs from 'fs';
 import { ixPack, ixWasmToJs, randomU64 } from './util';
 import { Connection, Keypair, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
-import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 
 const CONNSTRING = "http://localhost:8899";
 const connection = new Connection(CONNSTRING, "finalized");
 main();
+
+const loadPayer = (keypairPath: string): Keypair => {
+    if (keypairPath) {
+      return Keypair.fromSecretKey(
+        Buffer.from(
+          JSON.parse(
+            fs.readFileSync(keypairPath, {
+              encoding: "utf-8",
+            })
+          )
+        )
+      );
+    } else if (process.env.SECRET_KEY) {
+      return Keypair.fromSecretKey(
+        Buffer.from(JSON.parse(process.env.SECRET_KEY))
+      );
+    } else {
+      throw new Error(
+        "You must specify a path as the first argument or SECRET_KEY env variable"
+      );
+    }
+  };
 
 /**
  * Called with arguments
@@ -17,7 +38,7 @@ main();
 async function main(){
     await prepareFiles();
     console.log("Files prepared!");
-    const privateKey = Keypair.fromSecretKey(bs58.decode(process.argv[2]));
+    const privateKey = loadPayer(process.argv[2]);
     const registryID = process.argv[3];
     const dominariID = process.argv[4];
 
