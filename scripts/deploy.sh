@@ -1,15 +1,8 @@
 #!/usr/bin/env bash 
-cd ../../../jumpcrypto-solarc
-anchor build
-
-# Deploy Universe
-solana program deploy --program-id localhost_keypairs/core-ds-keypair.json target/deploy/core_ds.so
-
-cd ../dominari/arc2
 
 anchor build
 # Deploy Registry
-solana program deploy --program-id localhost_keypairs/registry-keypair.json target/deploy/registry.so
+solana program deploy --program-id localhost_keypairs/registry-keypair.json target/deploy/registry.so --url localhost
 # Deploy Dominari Action Bundle
-solana program deploy --program-id localhost_keypairs/dominari-keypair.json target/deploy/dominari.so
+solana program deploy --program-id localhost_keypairs/dominari-keypair.json target/deploy/dominari.so --url localhost
 

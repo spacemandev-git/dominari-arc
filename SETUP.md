@@ -9,9 +9,13 @@
 - yarn
 - ts-node and typescript installed globally
 
-## Clone Repo
+## Clone Repos
+`scripts/deploy.sh` assumes dominary-arc and sol-arc are in the same directory.
+
 ```sh
 git clone git@github.com:spacemandev-git/dominari-arc.git
+git clone git@github.com:JumpCrypto/sol-arc.git
+cd dominari-arc
 anchor build
 ```
 
@@ -29,12 +33,11 @@ yarn link dominari-sdk
 ## Solana Test Validator & Deploy
 ```sh
 # Run this in a seperate terminal so it can run
-solana-test-validator
+solana-test-validator --bpf-program GN5Ww5qa8ej4evFCJxMhV6AFEPKhD1Drdu8qYYptVgDJ deps/core_ds.so
 ```
 
 ```sh 
-cd ../scripts
-./deploy.sh
+./scripts/deploy.sh
 ```
 
 
@@ -43,7 +46,8 @@ Use a private key that has tokens on your local test validator (usually ~/.confi
 
 ```sh
 cd ./client-ts
-ts-node admin.ts <privateKey> H5mieGWWK6qukHoNzbR6ysLxReeQC4JHZcNM6JkPQnm3 3YdayPtujByJ1g1DWEUh7vpg78gZL49FWyD5rDGyof9T
+yarn install
+yarn ts-node admin.ts <path_to_private_key> H5mieGWWK6qukHoNzbR6ysLxReeQC4JHZcNM6JkPQnm3 3YdayPtujByJ1g1DWEUh7vpg78gZL49FWyD5rDGyof9T
 ```
 
 ## Get into the Game
